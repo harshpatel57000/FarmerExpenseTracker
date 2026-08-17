@@ -1,7 +1,9 @@
 package com.farmer.service;
 
 import com.farmer.entity.Village;
+import com.farmer.mapper.VillageMapper;
 import com.farmer.repository.VillageRepository;
+import com.farmer.dto.VillageDTO;
 
 import org.springframework.stereotype.Service;
 
@@ -16,17 +18,21 @@ public class VillageService {
         this.villageRepository = villageRepository;
     }
 
-    public Village addVillage(Village village) {
-        return villageRepository.save(village);
+
+    public VillageDTO addVillage(Village village){
+        Village VillageEntity= villageRepository.save(village);
+        return VillageMapper.toDTO(VillageEntity);
     }
 
-    public List<Village> getAllVillage() {
-        return villageRepository.findAll();
-    }
+    public List<VillageDTO> getAllVillage() {
 
-    public Village getVillageById(Long id) {
-        return villageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Village not found"));
+        return villageRepository.findAll().stream().map(VillageMapper::toDTO).toList();
+    };
+    
+
+    public VillageDTO getVillageById(Long id) {
+        return VillageMapper.toDTO(villageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Village not found")));
     }
 
     public void deleteVillage(Long id) {

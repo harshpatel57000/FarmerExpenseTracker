@@ -4,7 +4,7 @@ import com.farmer.entity.Village;
 import com.farmer.dto.VillageDTO;
 
 
-public class VillageMapper {
+public  class VillageMapper {
 
     //entity to DTO
     public static VillageDTO toDTO(Village village){

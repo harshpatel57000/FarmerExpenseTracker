@@ -1,4 +1,6 @@
 package com.farmer.entity;
+import com.farmer.dto.VillageDTO;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -29,4 +31,5 @@ public class Village {
     public void setName(){
         this.name=name;
     }
+    
 }
