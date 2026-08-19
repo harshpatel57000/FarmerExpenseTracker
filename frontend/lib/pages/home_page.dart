@@ -7,7 +7,8 @@ import 'profile_page.dart';
 import 'add_region_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  final int villageId;
+   HomePage({super.key, required this.villageId});
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +132,7 @@ class HomePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AddRegionPage(),
+                    builder: (context) => AddRegionPage(villageId: villageId),
                   ),
                 );
               },

@@ -5,13 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 @Data
 @NoArgsConstructor
-@AllArgsConstrucotr
+@AllArgsConstructor
 public class RegionDTO {
 
-    public RegionDTO(Long id2, String name2, Long id3) {
-        //TODO Auto-generated constructor stub
-    }
-
+    
     private Long id;
 
     private String name;
