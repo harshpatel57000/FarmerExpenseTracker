@@ -1,6 +1,4 @@
 package com.farmer.service;
-
-import com.farmer.BackendApplication;
 import com.farmer.dto.*;
 import com.farmer.mapper.FarmMapper;
 import com.farmer.repository.*;
@@ -12,14 +10,14 @@ import java.util.List;
 
 @Service
 public class FarmService {
-    private final BackendApplication backendApplication;
+    
     private final FarmRepository farmRepository;
     private final RegionRepository regionRepository;
 
-    public FarmService(FarmRepository farmRepository,RegionRepository regionRepository, BackendApplication backendApplication){
+    public FarmService(FarmRepository farmRepository,RegionRepository regionRepository){
         this.farmRepository=farmRepository;
         this.regionRepository=regionRepository;
-        this.backendApplication = backendApplication;
+        
     }
 
     //POST FARM

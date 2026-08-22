@@ -1,5 +1,5 @@
 package com.farmer.entity;
-import com.farmer.dto.VillageDTO;
+
 
 import jakarta.persistence.*;
 

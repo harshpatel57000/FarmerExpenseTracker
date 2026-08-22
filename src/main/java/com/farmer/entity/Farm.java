@@ -11,7 +11,7 @@ import com.farmer.entity.Region;
 @NoArgsConstructor
 @Data
 @Entity
-@Table(name="farmes")
+@Table(name="farms")
 
 public class Farm {
     @Id
