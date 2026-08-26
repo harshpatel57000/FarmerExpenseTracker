@@ -48,13 +48,23 @@ public class VillageController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<VillageDTO> getVillageById(@PathVariable Long id) {
-        return ResponseEntity.ok(villageService.getVillageById(id));
+    public ResponseEntity<Map<String,String>> getVillageById(@PathVariable Long id) {
+        Map<String,String> massage=new HashMap<>();
+        VillageDTO villageDTO=villageService.getVillageById(id);
+        String name=villageDTO.getName();
+        massage.put("Village name ",name);
+        return ResponseEntity.ok(massage);
     }
 
     @DeleteMapping("/{id}")
     public String deleteVillage(@PathVariable Long id) {
         villageService.deleteVillage(id);
         return "Village deleted successfully";
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> upadeVillageName(@PathVariable Long id ,@RequestBody VillageDTO villageDTO){
+        villageService.updateVillageName(id,villageDTO);
+        return ResponseEntity.ok("village name updated");
     }
 }

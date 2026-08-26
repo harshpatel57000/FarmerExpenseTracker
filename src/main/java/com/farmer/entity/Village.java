@@ -3,33 +3,51 @@ package com.farmer.entity;
 
 import jakarta.persistence.*;
 
+
 @Entity
-@Table(name="villages")
+@Table(name = "villages")
 public class Village {
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @Column(nullable=false,unique=true)
+
     private String name;
 
-    public Village(){
+    @Column(name = "pin_code", unique = true, nullable = false)
+    private String pinCode;
 
-    }
-    public Village(String name){
-        this.name=name;
+    //jpa
+    public Village() {
     }
 
-    public Long getId(){
+    //mapper
+    public Village(String name, String pinCode) {
+        this.name = name;
+        this.pinCode = pinCode;
+    }
+
+    public Long getId() {
         return id;
     }
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    public void setName(){
-        this.name=name;
+    public String getPinCode() {
+        return pinCode;
     }
-    
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPinCode(String pinCode) {
+        this.pinCode = pinCode;
+    }
 }

@@ -27,4 +27,10 @@ public class FarmController {
     public FarmDTO getFarmById(@PathVariable Long id){
         return farmService.getFarmById(id);
     }
+
+    @DeleteMapping("/{id}")
+    public String datetefarm(@PathVariable Long id){
+        farmService.deletefarm(id);
+        return ("delete farm complete");
+    }
 }

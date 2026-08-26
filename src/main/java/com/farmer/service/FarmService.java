@@ -39,4 +39,9 @@ public class FarmService {
     public List<FarmDTO> getAllFarm(){
         return farmRepository.findAll().stream().map(FarmMapper::toDTO).toList();
     }
+
+    //delete farm
+    public void deletefarm(Long id){
+        farmRepository.deleteById(id);
+    }
 }
