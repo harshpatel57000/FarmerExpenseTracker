@@ -4,11 +4,11 @@ import 'agro_expense_page.dart';
 import 'total_expense_page.dart';
 import 'select_farm_page.dart';
 import 'profile_page.dart';
-import 'add_region_page.dart';
+import 'add_location/village_page.dart';
 
 class HomePage extends StatelessWidget {
-  final int villageId;
-   HomePage({super.key, required this.villageId});
+  
+   HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +132,7 @@ class HomePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddRegionPage(villageId: villageId),
+                    builder: (context) => const VillagePage(),
                   ),
                 );
               },

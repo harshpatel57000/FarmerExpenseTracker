@@ -88,8 +88,8 @@ class _LoginPageState extends State<LoginPage> {
       context,
       MaterialPageRoute(
         builder: (context) =>
-             HomePage(villageId:3,),
-      ),
+             HomePage()),
+      
       
     );
   }

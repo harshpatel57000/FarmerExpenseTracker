@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/api_sevice.dart';
 
 class AddRegionPage extends StatefulWidget {
-  final int villageId;
-
-  const AddRegionPage({
-    super.key,
-    required this.villageId,
-  });
+  const AddRegionPage({super.key});
 
   @override
   State<AddRegionPage> createState() => _AddRegionPageState();
@@ -18,83 +12,227 @@ class _AddRegionPageState extends State<AddRegionPage> {
   // CONTROLLERS
   // ============================================================
 
+  final TextEditingController villageController = TextEditingController();
+  final TextEditingController pinCodeController = TextEditingController();
   final TextEditingController regionController = TextEditingController();
 
-  final TextEditingController farmController = TextEditingController();
+  // ============================================================
+  // LOCAL FRONTEND DATA
+  //
+  // Backend will be connected later.
+  // ============================================================
 
-  // ============================================================
-  // SAVED DATA
-  //
-  // Temporary local data for frontend development.
-  //
-  // Later this will come from Spring Boot + MySQL.
-  // ============================================================
+  final List<Map<String, dynamic>> villages = [
+    {
+      'id': 1,
+      'name': 'Jalsan',
+      'pinCode': '388170',
+    },
+    {
+      'id': 2,
+      'name': 'Khambhat',
+      'pinCode': '388620',
+    },
+  ];
 
   final List<Map<String, dynamic>> regions = [];
+
+  // Selected village
+  Map<String, dynamic>? selectedVillage;
+
+  // ============================================================
+  // ADD VILLAGE
+  // ============================================================
+
+  void showAddVillageDialog() {
+    villageController.clear();
+    pinCodeController.clear();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('ગામ ઉમેરો'),
+
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: villageController,
+                decoration: InputDecoration(
+                  labelText: 'ગામનું નામ',
+                  hintText: 'ઉદાહરણ: જલસણ',
+                  prefixIcon: const Icon(Icons.location_city_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              TextField(
+                controller: pinCodeController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: InputDecoration(
+                  labelText: 'Postal PIN Code',
+                  hintText: 'ઉદાહરણ: 388170',
+                  prefixIcon: const Icon(Icons.pin_drop_outlined),
+                  counterText: '',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('રદ કરો'),
+            ),
+
+            ElevatedButton(
+              onPressed: () {
+                addVillage(dialogContext);
+              },
+              child: const Text('ઉમેરો'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // ADD VILLAGE LOGIC
+  // ============================================================
+
+  void addVillage(BuildContext dialogContext) {
+    final String villageName = villageController.text.trim();
+    final String pinCode = pinCodeController.text.trim();
+
+    // Check village name
+    if (villageName.isEmpty) {
+      showMessage('ગામનું નામ દાખલ કરો');
+      return;
+    }
+
+    // Check PIN format
+    if (!RegExp(r'^\d{6}$').hasMatch(pinCode)) {
+      showMessage('યોગ્ય 6 અંકનો PIN Code દાખલ કરો');
+      return;
+    }
+
+    // Check duplicate PIN
+    final bool duplicatePin = villages.any(
+      (village) => village['pinCode'] == pinCode,
+    );
+
+    if (duplicatePin) {
+      showMessage(
+        'આ PIN Code સાથેનું ગામ પહેલેથી ઉમેરાયેલ છે',
+      );
+      return;
+    }
+
+    // Check duplicate village name
+    final bool duplicateVillage = villages.any(
+      (village) =>
+          village['name'].toString().toLowerCase() ==
+          villageName.toLowerCase(),
+    );
+
+    if (duplicateVillage) {
+      showMessage('આ ગામ પહેલેથી ઉમેરાયેલ છે');
+      return;
+    }
+
+    // Generate temporary frontend ID.
+    // Backend ID will be used later.
+    final int newId = villages.isEmpty
+        ? 1
+        : villages
+                .map((village) => village['id'] as int)
+                .reduce((a, b) => a > b ? a : b) +
+            1;
+
+    final Map<String, dynamic> newVillage = {
+      'id': newId,
+      'name': villageName,
+      'pinCode': pinCode,
+    };
+
+    setState(() {
+      villages.add(newVillage);
+      selectedVillage = newVillage;
+      regions.clear();
+    });
+
+    Navigator.pop(dialogContext);
+
+    showMessage('ગામ સફળતાપૂર્વક ઉમેરાયું');
+  }
+
+  // ============================================================
+  // SELECT VILLAGE
+  // ============================================================
+
+  void selectVillage(Map<String, dynamic> village) {
+    setState(() {
+      selectedVillage = village;
+
+      // For now local data.
+      // Later this will load regions from backend
+      // using village['id'].
+      regions.clear();
+
+      // Demo data
+      if (village['id'] == 1) {
+        regions.addAll([
+          {
+            'id': 1,
+            'name': 'North Area',
+          },
+          {
+            'id': 2,
+            'name': 'South Area',
+          },
+        ]);
+      }
+    });
+
+    showMessage('${village['name']} પસંદ કર્યું');
+  }
 
   // ============================================================
   // ADD REGION
   // ============================================================
 
-  Future<void> addRegion() async {
-  final String regionName =
-      regionController.text.trim();
+  void showAddRegionDialog() {
+    if (selectedVillage == null) {
+      showMessage('પહેલા ગામ પસંદ કરો');
+      return;
+    }
 
-  if (regionName.isEmpty) {
-    showMessage('વિસ્તારનું નામ દાખલ કરો');
-    return;
-  }
-
-  try {
-    final result = await ApiService.addRegion(
-      name: regionName,
-      villageId: widget.villageId,
-    );
-
-    setState(() {
-      regions.add({
-        'id': result['id'],
-        'name': result['name'],
-        'farms': <Map<String, dynamic>>[],
-        'cropCycles': <Map<String, dynamic>>[],
-      });
-
-      regionController.clear();
-    });
-
-    showMessage(
-      'વિસ્તાર સફળતાપૂર્વક ઉમેરાયો',
-    );
-  } catch (e) {
-    showMessage(
-      'વિસ્તાર ઉમેરવામાં ભૂલ: $e',
-    );
-  }
-}
-
-  // ============================================================
-  // ADD FARM TO REGION
-  // ============================================================
-
-  void addFarm(int regionIndex) {
-    farmController.clear();
+    regionController.clear();
 
     showDialog(
       context: context,
-
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('ખેતર ઉમેરો'),
+          title: const Text('વિસ્તાર ઉમેરો'),
 
           content: TextField(
-            controller: farmController,
-
+            controller: regionController,
             decoration: InputDecoration(
-              labelText: 'ખેતરનું નામ',
-              hintText: 'ઉદાહરણ: ખેતર નંબર 1',
-
-              prefixIcon: const Icon(Icons.agriculture_outlined),
-
+              labelText: 'વિસ્તારનું નામ',
+              hintText: 'ઉદાહરણ: નદી વાળો વિસ્તાર',
+              prefixIcon: const Icon(Icons.location_on_outlined),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -104,48 +242,64 @@ class _AddRegionPageState extends State<AddRegionPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
-
               child: const Text('રદ કરો'),
             ),
 
             ElevatedButton(
               onPressed: () {
-                final String farmName = farmController.text.trim();
-
-                if (farmName.isEmpty) {
-                  showMessage('ખેતરનું નામ દાખલ કરો');
-                  return;
-                }
-
-                final List<String> farms = List<String>.from(
-                  regions[regionIndex]['farms'],
-                );
-
-                // Check duplicate farm
-                if (farms.any(
-                  (farm) => farm.toLowerCase() == farmName.toLowerCase(),
-                )) {
-                  showMessage('આ ખેતર પહેલેથી ઉમેરાયેલ છે');
-                  return;
-                }
-
-                setState(() {
-                  regions[regionIndex]['farms'].add(farmName);
-                });
-
-                Navigator.pop(context);
-
-                showMessage('ખેતર સફળતાપૂર્વક ઉમેરાયું');
+                addRegion(dialogContext);
               },
-
               child: const Text('ઉમેરો'),
             ),
           ],
         );
       },
     );
+  }
+
+  // ============================================================
+  // ADD REGION LOGIC
+  // ============================================================
+
+  void addRegion(BuildContext dialogContext) {
+    final String regionName = regionController.text.trim();
+
+    if (regionName.isEmpty) {
+      showMessage('વિસ્તારનું નામ દાખલ કરો');
+      return;
+    }
+
+    // Check duplicate region inside selected village
+    final bool duplicateRegion = regions.any(
+      (region) =>
+          region['name'].toString().toLowerCase() ==
+          regionName.toLowerCase(),
+    );
+
+    if (duplicateRegion) {
+      showMessage('આ વિસ્તારમાં પહેલેથી ઉમેરાયેલ છે');
+      return;
+    }
+
+    final int newId = regions.isEmpty
+        ? 1
+        : regions
+                .map((region) => region['id'] as int)
+                .reduce((a, b) => a > b ? a : b) +
+            1;
+
+    setState(() {
+      regions.add({
+        'id': newId,
+        'name': regionName,
+      });
+    });
+
+    Navigator.pop(dialogContext);
+
+    showMessage('વિસ્તાર સફળતાપૂર્વક ઉમેરાયો');
   }
 
   // ============================================================
@@ -157,21 +311,19 @@ class _AddRegionPageState extends State<AddRegionPage> {
 
     showDialog(
       context: context,
-
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('વિસ્તાર કાઢી નાખવો?'),
 
           content: Text(
-            '$regionName અને તેની અંદરના ખેતરો કાઢી નાખવામાં આવશે.',
+            '$regionName કાઢી નાખવામાં આવશે.',
           ),
 
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
-
               child: const Text('રદ કરો'),
             ),
 
@@ -181,11 +333,10 @@ class _AddRegionPageState extends State<AddRegionPage> {
                   regions.removeAt(index);
                 });
 
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
 
                 showMessage('વિસ્તાર કાઢી નાખવામાં આવ્યો');
               },
-
               child: const Text('કાઢી નાખો'),
             ),
           ],
@@ -195,24 +346,15 @@ class _AddRegionPageState extends State<AddRegionPage> {
   }
 
   // ============================================================
-  // DELETE FARM
-  // ============================================================
-
-  void deleteFarm(int regionIndex, int farmIndex) {
-    setState(() {
-      regions[regionIndex]['farms'].removeAt(farmIndex);
-    });
-
-    showMessage('ખેતર કાઢી નાખવામાં આવ્યું');
-  }
-
-  // ============================================================
   // MESSAGE
   // ============================================================
 
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -223,7 +365,10 @@ class _AddRegionPageState extends State<AddRegionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('વિસ્તાર અને ખેતર'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('ગામ અને વિસ્તાર'),
+        centerTitle: true,
+      ),
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -231,63 +376,52 @@ class _AddRegionPageState extends State<AddRegionPage> {
 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-
             children: [
               // ==================================================
-              // HEADER
+              // TITLE
               // ==================================================
+
               const Text(
-                'તમારા વિસ્તાર ઉમેરો',
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                'ગામ પસંદ કરો',
+                style: TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
               const SizedBox(height: 6),
 
               const Text(
-                'તમારા ગામ પ્રમાણે વિસ્તારનું નામ આપો અને તેમાં ખેતરો ઉમેરો.',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // REGION INPUT
-              // ==================================================
-              TextField(
-                controller: regionController,
-
-                decoration: InputDecoration(
-                  labelText: 'વિસ્તારનું નામ',
-
-                  hintText: 'ઉદાહરણ: નદી વાળો વિસ્તાર',
-
-                  prefixIcon: const Icon(Icons.location_on_outlined),
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                'પહેલા ગામ પસંદ કરો અથવા નવું ગામ ઉમેરો.',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 20),
 
               // ==================================================
-              // ADD REGION BUTTON
+              // ADD VILLAGE BUTTON
               // ==================================================
+
               SizedBox(
                 height: 52,
 
-                child: ElevatedButton.icon(
-                  onPressed: addRegion,
+                child: OutlinedButton.icon(
+                  onPressed: showAddVillageDialog,
 
-                  icon: const Icon(Icons.add_location_alt_outlined),
+                  icon: const Icon(Icons.add),
 
                   label: const Text(
-                    'વિસ્તાર ઉમેરો',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    'નવું ગામ ઉમેરો',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
 
-                  style: ElevatedButton.styleFrom(
+                  style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -295,17 +429,101 @@ class _AddRegionPageState extends State<AddRegionPage> {
                 ),
               ),
 
+              const SizedBox(height: 20),
+
+              // ==================================================
+              // VILLAGE LIST
+              // ==================================================
+
+              ...List.generate(
+                villages.length,
+                (index) {
+                  return _buildVillageCard(villages[index]);
+                },
+              ),
+
               const SizedBox(height: 30),
 
               // ==================================================
-              // SAVED REGIONS
+              // SELECTED VILLAGE
               // ==================================================
-              if (regions.isEmpty) _buildEmptyState(),
 
-              if (regions.isNotEmpty)
-                ...List.generate(regions.length, (index) {
-                  return _buildRegionCard(index);
-                }),
+              if (selectedVillage != null) ...[
+                const Divider(),
+
+                const SizedBox(height: 20),
+
+                Text(
+                  'પસંદ કરેલ ગામ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  selectedVillage!['name'],
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                Text(
+                  'PIN: ${selectedVillage!['pinCode']}',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // ==================================================
+                // REGION SECTION
+                // ==================================================
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                  children: [
+                    const Text(
+                      'વિસ્તારો',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    TextButton.icon(
+                      onPressed: showAddRegionDialog,
+
+                      icon: const Icon(Icons.add),
+
+                      label: const Text(
+                        'વિસ્તાર ઉમેરો',
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                if (regions.isEmpty)
+                  _buildEmptyRegionState(),
+
+                if (regions.isNotEmpty)
+                  ...List.generate(
+                    regions.length,
+                    (index) {
+                      return _buildRegionCard(
+                        regions[index],
+                        index,
+                      );
+                    },
+                  ),
+              ],
             ],
           ),
         ),
@@ -314,15 +532,77 @@ class _AddRegionPageState extends State<AddRegionPage> {
   }
 
   // ============================================================
-  // EMPTY STATE
+  // VILLAGE CARD
   // ============================================================
 
-  Widget _buildEmptyState() {
+  Widget _buildVillageCard(
+    Map<String, dynamic> village,
+  ) {
+    final bool isSelected =
+        selectedVillage != null &&
+        selectedVillage!['id'] == village['id'];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+
+        side: BorderSide(
+          color: isSelected
+              ? Colors.green
+              : Colors.grey.shade300,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+
+      child: ListTile(
+        leading: CircleAvatar(
+          child: const Icon(
+            Icons.location_city_outlined,
+          ),
+        ),
+
+        title: Text(
+          village['name'],
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        subtitle: Text(
+          'PIN: ${village['pinCode']}',
+        ),
+
+        trailing: isSelected
+            ? const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+              )
+            : const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+              ),
+
+        onTap: () {
+          selectVillage(village);
+        },
+      ),
+    );
+  }
+
+  // ============================================================
+  // EMPTY REGION
+  // ============================================================
+
+  Widget _buildEmptyRegionState() {
     return Container(
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(25),
 
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
 
         borderRadius: BorderRadius.circular(16),
       ),
@@ -331,26 +611,31 @@ class _AddRegionPageState extends State<AddRegionPage> {
         children: [
           Icon(
             Icons.location_off_outlined,
-            size: 50,
+            size: 45,
             color: Colors.grey.shade500,
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           const Text(
-            'હજુ કોઈ વિસ્તાર ઉમેરાયો નથી',
+            'આ ગામમાં હજુ કોઈ વિસ્તાર નથી.',
             textAlign: TextAlign.center,
 
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
           ),
 
           const SizedBox(height: 5),
 
           const Text(
-            'ઉપરથી તમારો પ્રથમ વિસ્તાર ઉમેરો.',
+            'ઉપરથી નવો વિસ્તાર ઉમેરો.',
             textAlign: TextAlign.center,
 
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              color: Colors.grey,
+            ),
           ),
         ],
       ),
@@ -361,172 +646,58 @@ class _AddRegionPageState extends State<AddRegionPage> {
   // REGION CARD
   // ============================================================
 
-  Widget _buildRegionCard(int regionIndex) {
-    final Map<String, dynamic> region = regions[regionIndex];
-
-    final String regionName = region['name'];
-
-    final List<String> farms = List<String>.from(region['farms']);
-
+  Widget _buildRegionCard(
+    Map<String, dynamic> region,
+    int index,
+  ) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 15),
+      margin: const EdgeInsets.only(bottom: 10),
 
-      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
 
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        leading: const CircleAvatar(
+          child: Icon(
+            Icons.location_on_outlined,
+          ),
+        ),
 
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+        title: Text(
+          region['name'],
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        subtitle: Text(
+          'ગામ: ${selectedVillage!['name']}',
+        ),
 
-          children: [
-            // ==================================================
-            // REGION HEADER
-            // ==================================================
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
+        trailing: IconButton(
+          onPressed: () {
+            deleteRegion(index);
+          },
 
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-
-                    color: Colors.green.withValues(alpha: 0.1),
-                  ),
-
-                  child: const Icon(Icons.location_on_outlined),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-
-                    children: [
-                      const Text(
-                        'વિસ્તાર',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-
-                      Text(
-                        regionName,
-
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                IconButton(
-                  onPressed: () {
-                    deleteRegion(regionIndex);
-                  },
-
-                  icon: const Icon(Icons.delete_outline),
-                ),
-              ],
-            ),
-
-            const Divider(height: 25),
-
-            // ==================================================
-            // FARM TITLE
-            // ==================================================
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-              children: [
-                Text(
-                  'ખેતરો (${farms.length})',
-
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                TextButton.icon(
-                  onPressed: () {
-                    addFarm(regionIndex);
-                  },
-
-                  icon: const Icon(Icons.add),
-
-                  label: const Text('ખેતર ઉમેરો'),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 5),
-
-            // ==================================================
-            // FARMS
-            // ==================================================
-            if (farms.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(12),
-
-                child: const Text(
-                  'આ વિસ્તારમાં હજુ કોઈ ખેતર નથી.',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-
-            if (farms.isNotEmpty)
-              ...List.generate(farms.length, (farmIndex) {
-                return _buildFarmRow(regionIndex, farmIndex, farms[farmIndex]);
-              }),
-          ],
+          icon: const Icon(
+            Icons.delete_outline,
+          ),
         ),
       ),
     );
   }
 
   // ============================================================
-  // FARM ROW
+  // DISPOSE
   // ============================================================
 
-  Widget _buildFarmRow(int regionIndex, int farmIndex, String farmName) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+  @override
+  void dispose() {
+    villageController.dispose();
+    pinCodeController.dispose();
+    regionController.dispose();
 
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-
-        borderRadius: BorderRadius.circular(10),
-      ),
-
-      child: Row(
-        children: [
-          const Icon(Icons.agriculture_outlined, size: 22),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Text(
-              farmName,
-
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-          ),
-
-          IconButton(
-            onPressed: () {
-              deleteFarm(regionIndex, farmIndex);
-            },
-
-            icon: const Icon(Icons.delete_outline, size: 20),
-          ),
-        ],
-      ),
-    );
+    super.dispose();
   }
 }
