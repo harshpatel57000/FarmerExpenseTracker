@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.farmer.Agro_expense.enumValue.ValueUnit;
+import com.farmer.Agro_expense.exception.AgroException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AgroService {
 
-    private final AgroRepository agroRepository;
+private final AgroRepository agroRepository;
 
     public AgroDTO addAgro(AgroDTO dto) {
 
@@ -47,5 +48,10 @@ public class AgroService {
         return agroList.stream()
             .map(AgroMapper::toDTO)
             .toList();
-    }
+   }
+   public AgroDTO getAgroById(long id){
+        Agro agro=agroRepository.findById(id).orElseThrow(() ->new AgroException("Agro excepense not found!"));
+        return AgroMapper.toDTO(agro);
+   }
+
 }
