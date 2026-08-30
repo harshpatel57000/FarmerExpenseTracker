@@ -1,4 +1,4 @@
-package com.farmer.add_region_page;
+package com.farmer.add_region_page.FarmPage;
 
 import org.springframework.web.bind.annotation.*;
 

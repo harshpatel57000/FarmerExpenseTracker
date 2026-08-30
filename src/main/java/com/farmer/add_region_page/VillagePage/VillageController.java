@@ -1,8 +1,6 @@
-package com.farmer.add_region_page;
+package com.farmer.add_region_page.VillagePage;
 
-import com.farmer.add_region_page.VillageMapper;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 
 import java.util.*;
 

@@ -1,28 +1,17 @@
-package com.farmer.add_region_page;
+package com.farmer.add_region_page.VillagePage;
 
 
-import jakarta.persistence.*;
+public class VillageDTO {
 
-
-@Entity
-@Table(name = "villages")
-public class Village {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
-
-    @Column(name = "pin_code", unique = true, nullable = false)
     private String pinCode;
 
-    //jpa
-    public Village() {
+    public VillageDTO() {
     }
 
-    //mapper
-    public Village(String name, String pinCode) {
+    public VillageDTO(Long id, String name, String pinCode) {
+        this.id = id;
         this.name = name;
         this.pinCode = pinCode;
     }

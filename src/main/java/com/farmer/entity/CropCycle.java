@@ -3,8 +3,7 @@ package com.farmer.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-import com.farmer.add_region_page.Farm;
-import com.farmer.entity.*;
+import com.farmer.add_region_page.FarmPage.Farm;
 
 import lombok.*;
 @Setter@Getter@Builder

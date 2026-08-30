@@ -1,6 +1,4 @@
-package com.farmer.add_region_page;
-
-import com.farmer.add_region_page.VillageMapper;
+package com.farmer.add_region_page.VillagePage;
 
 import org.springframework.stereotype.Service;
 

@@ -1,8 +1,8 @@
-package com.farmer.add_region_page;
+package com.farmer.add_region_page.RegionPage;
 
-import com.farmer.entity.*;
-import com.farmer.repository.*;
-import com.farmer.add_region_page.RegionMapper;
+import com.farmer.add_region_page.VillagePage.Village;
+import com.farmer.add_region_page.VillagePage.VillageRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;

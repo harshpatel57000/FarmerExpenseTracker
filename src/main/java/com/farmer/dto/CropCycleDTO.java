@@ -1,6 +1,5 @@
 package com.farmer.dto;
 
-import com.farmer.entity.CropCycle;
 
 import lombok.*;
 

@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 
 import com.farmer.dto.CropCycleDTO;
 import com.farmer.entity.CropCycle;
