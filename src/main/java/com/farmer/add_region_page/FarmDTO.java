@@ -1,10 +1,8 @@
-package com.farmer.dto;
+package com.farmer.add_region_page;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import com.farmer.entity.Farm;
 
 
 @Data

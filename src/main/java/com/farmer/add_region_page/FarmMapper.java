@@ -1,8 +1,8 @@
-package com.farmer.mapper;
+package com.farmer.add_region_page;
 
-import com.farmer.dto.FarmDTO;
-import com.farmer.entity.Farm;
-import com.farmer.entity.Region;
+import com.farmer.add_region_page.Farm;
+import com.farmer.add_region_page.FarmDTO;
+import com.farmer.add_region_page.Region;
 
 
 public class FarmMapper {

@@ -1,8 +1,7 @@
-package com.farmer.controller;
+package com.farmer.add_region_page;
 
-import com.farmer.service.FarmService;
 import org.springframework.web.bind.annotation.*;
-import com.farmer.dto.FarmDTO;
+
 import java.util.List;
 @RestController
 @RequestMapping("/api/farm")

@@ -1,4 +1,4 @@
-package com.farmer.dto;
+package com.farmer.add_region_page;
 
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;

@@ -1,9 +1,6 @@
-package com.farmer.service;
+package com.farmer.add_region_page;
 
-import com.farmer.entity.Village;
-import com.farmer.mapper.VillageMapper;
-import com.farmer.repository.VillageRepository;
-import com.farmer.dto.VillageDTO;
+import com.farmer.add_region_page.VillageMapper;
 
 import org.springframework.stereotype.Service;
 

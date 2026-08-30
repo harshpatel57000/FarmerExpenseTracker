@@ -1,6 +1,5 @@
-package com.farmer.repository;
+package com.farmer.add_region_page;
 
-import com.farmer.entity.Farm;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

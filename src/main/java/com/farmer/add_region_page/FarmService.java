@@ -1,6 +1,6 @@
-package com.farmer.service;
+package com.farmer.add_region_page;
 import com.farmer.dto.*;
-import com.farmer.mapper.FarmMapper;
+import com.farmer.add_region_page.FarmMapper;
 import com.farmer.repository.*;
 import com.farmer.entity.*;
 

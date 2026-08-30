@@ -1,8 +1,7 @@
-package com.farmer.repository;
+package com.farmer.add_region_page;
 
 import java.util.Optional;
 
-import com.farmer.entity.Village;
 import org.springframework.data.jpa.repository.JpaRepository;
 public interface VillageRepository extends JpaRepository<Village, Long>{
     // Check village  name already exists

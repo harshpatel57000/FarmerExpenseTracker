@@ -1,11 +1,9 @@
-package com.farmer.entity;
+package com.farmer.add_region_page;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import com.farmer.entity.Region;
 
 @AllArgsConstructor
 @NoArgsConstructor

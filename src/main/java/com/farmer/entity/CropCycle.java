@@ -2,6 +2,8 @@ package com.farmer.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+
+import com.farmer.add_region_page.Farm;
 import com.farmer.entity.*;
 
 import lombok.*;

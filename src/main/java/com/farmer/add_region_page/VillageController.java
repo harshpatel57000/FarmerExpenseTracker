@@ -1,9 +1,6 @@
-package com.farmer.controller;
+package com.farmer.add_region_page;
 
-import com.farmer.dto.VillageDTO;
-import com.farmer.entity.Village;
-import com.farmer.service.VillageService;
-import com.farmer.mapper.VillageMapper;
+import com.farmer.add_region_page.VillageMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 

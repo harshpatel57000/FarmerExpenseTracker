@@ -1,7 +1,7 @@
-package com.farmer.mapper;
+package com.farmer.add_region_page;
 
-import com.farmer.entity.Village;
-import com.farmer.dto.VillageDTO;
+import com.farmer.add_region_page.Village;
+import com.farmer.add_region_page.VillageDTO;
 
 
 public  class VillageMapper {

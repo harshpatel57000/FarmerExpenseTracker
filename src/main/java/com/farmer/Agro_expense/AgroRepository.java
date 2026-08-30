@@ -1,6 +1,4 @@
-package com.farmer.repository;
-
-import com.farmer.entity.Agro;
+package com.farmer.Agro_expense;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
