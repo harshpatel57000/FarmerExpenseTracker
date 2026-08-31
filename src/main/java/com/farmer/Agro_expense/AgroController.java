@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/agro")
 @RequiredArgsConstructor
@@ -14,7 +16,7 @@ public class AgroController {
     private final AgroService agroService;
 
     @PostMapping
-    public AgroDTO addAgro(@RequestBody AgroDTO dto) {
+    public AgroDTO addAgro(@Valid @RequestBody AgroDTO dto) {
         return agroService.addAgro(dto);
     }
 
@@ -24,7 +26,7 @@ public class AgroController {
     }
 
     @GetMapping("/{id}")
-    public AgroDTO getAgroById(@PathVariable Long id){
+    public AgroDTO getAgroById(@Valid @PathVariable Long id){
         return agroService.getAgroById(id);
     }
 }
