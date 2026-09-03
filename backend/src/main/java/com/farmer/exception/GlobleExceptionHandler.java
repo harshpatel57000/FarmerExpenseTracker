@@ -20,9 +20,10 @@ public class GlobleExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex){
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("invalid value :"+ ex.getValue());
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex){
+        String message="invalid value :"+ ex.getValue();
+        ErrorResponse errorResponse=new ErrorResponse(HttpStatus.BAD_REQUEST.value(),message,LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse>handleValidationException(

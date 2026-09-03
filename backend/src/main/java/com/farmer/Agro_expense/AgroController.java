@@ -29,4 +29,18 @@ public class AgroController {
     public AgroDTO getAgroById(@Valid @PathVariable Long id){
         return agroService.getAgroById(id);
     }
-}
+
+    @PutMapping("/{id}")
+    public AgroDTO putAgroDTO(@Valid @PathVariable Long id,@RequestBody AgroDTO dto){
+        return agroService.putAgro(id,dto);
+    }
+    @PatchMapping("/{id}")
+    public AgroDTO patchAgroDTO(@Valid @PathVariable Long id,@RequestBody AgroDTO dto){
+        return agroService.patchAgro(id,dto);
+    }
+    @DeleteMapping("/{id}")
+    public void deleteAgro(@Valid @PathVariable Long id){
+        agroService.deleteAgro(id);
+    }
+
+}   
