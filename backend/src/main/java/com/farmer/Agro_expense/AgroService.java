@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.farmer.Agro_expense.enumValue.ValueUnit;
-import com.farmer.Agro_expense.exception.AgroException;
+import com.farmer.exception.ErrorException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,15 +24,13 @@ private final AgroRepository agroRepository;
                 agro.getQuantity().getValue()
                 * agro.getMeasurement().getValue();
 
-        agro.setTotalWeight(
-                ValueUnit.builder()
+        agro.setTotalWeight(ValueUnit
+                        .builder()
                         .value(totalWeight)
                         .unit(agro.getMeasurement().getUnit())
                         .build());
 
-        Float totalAmount =
-                (float) (agro.getQuantity().getValue()
-        * agro.getPricePerUnit());
+        Float totalAmount =(float) (agro.getQuantity().getValue()* agro.getPricePerUnit());
 
         agro.setTotalAmount(totalAmount);
 
@@ -50,7 +48,7 @@ private final AgroRepository agroRepository;
             .toList();
    }
    public AgroDTO getAgroById(long id){
-        Agro agro=agroRepository.findById(id).orElseThrow(() ->new AgroException("Agro excepense not found!"));
+        Agro agro=agroRepository.findById(id).orElseThrow(() ->new ErrorException("Agro excepense not found!"));
         return AgroMapper.toDTO(agro);
    }
 

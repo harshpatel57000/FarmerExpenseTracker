@@ -1,6 +1,7 @@
 package com.farmer.add_region_page.FarmPage;
 import com.farmer.add_region_page.RegionPage.Region;
 import com.farmer.add_region_page.RegionPage.RegionRepository;
+import com.farmer.exception.ErrorException;
 
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,7 @@ public class FarmService {
     }
     //GET FARM
     public FarmDTO getFarmById(Long id){
-        Farm farm=farmRepository.findById(id).orElseThrow(()-> new RuntimeException("farm not found!"));
+        Farm farm=farmRepository.findById(id).orElseThrow(()-> new ErrorException("farm not found!"));
         return FarmMapper.toDTO(farm);
 
     }

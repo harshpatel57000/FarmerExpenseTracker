@@ -2,6 +2,7 @@ package com.farmer.add_region_page.RegionPage;
 
 import com.farmer.add_region_page.VillagePage.Village;
 import com.farmer.add_region_page.VillagePage.VillageRepository;
+import com.farmer.exception.ErrorException;
 
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,7 @@ public class RegionService {
     }   
     //POST
     public RegionDTO addRegion(RegionDTO dto){
-        Village village=villageRepository.findById(dto.getVillageId()).orElseThrow(() -> new RuntimeException("village not found"));
+        Village village=villageRepository.findById(dto.getVillageId()).orElseThrow(() -> new ErrorException("village not found"));
         Region region=RegionMapper.toENTITY(dto,village);
         Region savedRegion=regionRepository.save(region);
         return RegionMapper.toDTO(savedRegion);
@@ -30,7 +31,7 @@ public class RegionService {
 
     //GET BY ID
     public RegionDTO getRegionById(Long id){
-      Region region=  regionRepository.findById(id).orElseThrow(() ->new RuntimeException("region not found!"));
+      Region region=  regionRepository.findById(id).orElseThrow(() ->new ErrorException("region not found!"));
         return RegionMapper.toDTO(region);
     }
 

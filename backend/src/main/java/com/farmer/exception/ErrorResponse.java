@@ -1,4 +1,4 @@
-package com.farmer.Agro_expense.exception;
+package com.farmer.exception;
 
 import java.time.LocalDateTime;
 import java.util.List;

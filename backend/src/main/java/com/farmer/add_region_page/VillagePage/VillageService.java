@@ -2,6 +2,8 @@ package com.farmer.add_region_page.VillagePage;
 
 import org.springframework.stereotype.Service;
 
+import com.farmer.exception.ErrorException;
+
 import java.util.List;
 
 @Service
@@ -28,7 +30,7 @@ public class VillageService {
     //GET BY ID
     public VillageDTO getVillageById(Long id) {
         return VillageMapper.toDTO(villageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Village not found")));
+                .orElseThrow(() -> new ErrorException("Village not found")));
     }
 
     //delete
@@ -38,7 +40,7 @@ public class VillageService {
 
     //put 
     public VillageDTO updateVillageName(Long id,VillageDTO villageDTO){
-        Village village=villageRepository.findById(id).orElseThrow(() -> new RuntimeException("village not found id :"+id));
+        Village village=villageRepository.findById(id).orElseThrow(() -> new ErrorException("village not found id :"+id));
         village.setName(villageDTO.getName());
         village.setPinCode(villageDTO.getPinCode());
         Village updateVillage=villageRepository.save(village);
