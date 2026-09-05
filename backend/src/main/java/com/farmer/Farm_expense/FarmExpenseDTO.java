@@ -17,11 +17,11 @@ public class FarmExpenseDTO {
 
     private Long id;
     private String expenseName;
-    private Integer workerNumaber;
+    private Integer numberOfWorkers;
     private Float pricePerWorker;
     private Float teaOfCost;
     private Float cost135;
-    private Float breackFastCost;
+    private Float breackfastCost;
     private LocalDate expenseDate;
     private Float totalCost;
 

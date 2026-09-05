@@ -2,23 +2,17 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://localhost:8081';
+  static const String baseUrl = 'http://localhost:8081';
 
   // =========================
   // ADD VILLAGE
   // =========================
 
-  static Future<Map<String, dynamic>> addVillage({
-    required String name,
-  }) async {
+  static Future<Map<String, dynamic>> addVillage({required String name}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/village'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'name': name,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name}),
     );
 
     return _handleResponse(response, 'Add Village');
@@ -34,13 +28,8 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/region'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'name': name,
-        'villageId': villageId,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name, 'villageId': villageId}),
     );
 
     return _handleResponse(response, 'Add Region');
@@ -56,13 +45,8 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/farm'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'name': name,
-        'regionId': regionId,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name, 'regionId': regionId}),
     );
 
     return _handleResponse(response, 'Add Farm');
@@ -76,8 +60,7 @@ class ApiService {
     http.Response response,
     String operation,
   ) {
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       if (response.body.isEmpty) {
         return {};
       }

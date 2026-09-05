@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,7 @@ import lombok.Setter;
 
 @Entity 
 @Table(name ="farm_expenses")
+@Builder 
 @Data
 @Setter 
 @Getter
@@ -25,7 +27,7 @@ public class FarmExpense {
     private String expenseName;
 
     @Column(name="worker_number",nullable=false)
-    private Integer workerNumber;
+    private Integer numberOfWorkers;
 
     @Column(name="price_per_worker",nullable=false)
     private Float pricePerWorker;
@@ -37,10 +39,10 @@ public class FarmExpense {
     private Float cost135;
 
     @Column (name="breack_fast_cost",nullable=true)
-    private Float breackFastCost;
+    private Float breackfastCost;
 
     @Column(name="date",nullable=false)
-    private LocalDate ExpenseDate;
+    private LocalDate expenseDate;
 
     @Column(name="total_cost",nullable=false)
     private Float totalCost;    
