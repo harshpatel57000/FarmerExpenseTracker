@@ -16,7 +16,8 @@ public class VillageService {
     }
 
     //POST
-    public VillageDTO addVillage(Village village){
+    public VillageDTO addVillage(VillageDTO villagedto){
+        Village village=VillageMapper.toEntity(villagedto);
         Village VillageEntity= villageRepository.save(village);
         return VillageMapper.toDTO(VillageEntity);
     }

@@ -7,6 +7,8 @@ import java.util.*;
 
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 
 @RestController
 @RequestMapping("/api/village")
@@ -23,10 +25,9 @@ public class VillageController {
     }
     
     @PostMapping
-    public ResponseEntity<String> addVillage(@RequestBody VillageDTO villagedto) {
-        Village village=VillageMapper.toEntity(villagedto);
+    public ResponseEntity<String> addVillage(@Valid @RequestBody VillageDTO villagedto) {
              try{
-        villageService.addVillage(village);
+        villageService.addVillage(villagedto);
         return ResponseEntity.ok("VILLAGE IS ADDED");
              }catch(Exception e){
         return ResponseEntity.ok(villagedto.getName()+"  VILLAGE IS ALREADY.EXIST");
