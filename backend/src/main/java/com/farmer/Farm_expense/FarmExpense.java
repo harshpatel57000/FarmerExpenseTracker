@@ -37,10 +37,10 @@ public class FarmExpense {
     private Float cost135;
 
     @Column (name="breack_fast_cost",nullable=true)
-    private Float breackfastCost;
+    private Float breackFastCost;
 
     @Column(name="date",nullable=false)
-    private LocalDate Expensedate;
+    private LocalDate ExpenseDate;
 
     @Column(name="total_cost",nullable=false)
     private Float totalCost;    
