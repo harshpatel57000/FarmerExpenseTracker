@@ -4,7 +4,7 @@ import 'agro_expense_page.dart';
 import 'total_expense_page.dart';
 import 'select_farm_page.dart';
 import 'profile_page.dart';
-import 'add_location/village_page.dart';
+import 'add_region/village_page.dart';
 
 class HomePage extends StatelessWidget {
   
