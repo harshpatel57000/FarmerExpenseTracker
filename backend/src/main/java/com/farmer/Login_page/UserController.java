@@ -6,8 +6,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.farmer.Login_page.UserDTO.loginRequest;
+import com.farmer.Login_page.UserDTO.loginResponse;
 import com.farmer.Login_page.UserDTO.signUpRequest;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 import com.farmer.Login_page.UserService;
@@ -22,36 +24,16 @@ public class UserController {
     private final UserService userService;
     
     @PostMapping("/login")
-    public String loginRequest(@RequestBody loginRequest request){
+    public loginResponse loginRequest(@Valid @RequestBody loginRequest request){
+        User user=userService.login(request);
 
-    if(request.getEmailId() != null){
-
-     User user=userService.findByEmail(request.getEmailId());
-
-     if(user == null) return "user not found";
-
-     if(!userService.checkPassword(request.getPassword(),user.getPassword())) return "Invalid password";
-
-
-     return "Login successful";
+     return new loginResponse(user);
     }
 
-    if(request.getPhoneNumber() != null){
-
-        User user=userService.findByPhoneNumber(request.getPhoneNumber());
-
-        if(user == null) return "user not Found";
-
-        if(!userService.checkPassword(request.getPassword(),user.getPassword())) return "Invalid password";
-
-        return "Login successful";
-    }
-
-        return "invalid request data";
-    }
+    
 
     @PostMapping("/signup")
-    public String signUp(@RequestBody signUpRequest sign){
+    public String signUp(@Valid @RequestBody signUpRequest sign){
         userService.signUp(sign);
         return "signup completed";
     }

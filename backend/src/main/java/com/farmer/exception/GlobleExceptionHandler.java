@@ -15,7 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobleExceptionHandler {
     @ExceptionHandler(ErrorException.class)
-    public ResponseEntity<String> handlerAgroException(ErrorException ex){
+    public ResponseEntity<String> handlerErrorException(ErrorException ex){
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 

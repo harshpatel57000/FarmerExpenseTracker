@@ -13,12 +13,10 @@ public class loginRequest {
 
 
     @Email 
-    @NotBlank
     private String emailId;
 
-    @NotBlank
     private String phoneNumber;
 
-    @NotBlank
+    @NotBlank(message = "Please,Enter Password!")
     private String password;
 }

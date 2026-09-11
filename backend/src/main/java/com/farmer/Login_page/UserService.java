@@ -3,6 +3,7 @@ package com.farmer.Login_page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.farmer.Login_page.UserDTO.loginRequest;
 import com.farmer.Login_page.UserDTO.signUpRequest;
 import com.farmer.exception.ErrorException;
 
@@ -15,14 +16,35 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public User findByEmail(String emailId){
-        return userRepository.findByEmailId(emailId).orElse(null);
+    public User login(loginRequest request){
 
-    }
+        User user;
 
-    public User findByPhoneNumber(String phoneNumber){
-        return userRepository.findByPhoneNumber(phoneNumber).orElse(null);
-    }
+        if(request.getEmailId() != null && !request.getEmailId().isBlank()){
+
+            user=userRepository.findByEmailId(request.getEmailId()).orElse(null);
+            
+                }else if(request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()){
+                      
+                    user=userRepository.findByPhoneNumber(request.getPhoneNumber()).orElse(null);
+                
+                    }else{
+                      
+                        throw new ErrorException("Email and PhoneNumber is required");
+                     
+                    }
+        if(user == null){
+            throw new ErrorException("user not Found!");
+        }
+
+        
+         if(!checkPassword(request.getPassword(),user.getPassword())){
+            throw new ErrorException("Invalid Password!");
+         }
+
+         return user;
+
+    }   
 
     public User signUp(signUpRequest sign){
         User user=new User();
