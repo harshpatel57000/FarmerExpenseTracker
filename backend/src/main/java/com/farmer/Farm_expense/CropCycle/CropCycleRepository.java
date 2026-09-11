@@ -1,8 +1,6 @@
-package com.farmer.repository;
+package com.farmer.Farm_expense.CropCycle;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.farmer.entity.CropCycle;
 
 
 public interface CropCycleRepository extends JpaRepository<CropCycle,Long>{

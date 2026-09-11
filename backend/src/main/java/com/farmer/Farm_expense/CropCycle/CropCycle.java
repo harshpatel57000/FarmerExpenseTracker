@@ -1,4 +1,4 @@
-package com.farmer.entity;
+package com.farmer.Farm_expense.CropCycle;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;

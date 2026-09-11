@@ -1,8 +1,7 @@
-package com.farmer.mapper;
+package com.farmer.Farm_expense.CropCycle;
 
-import com.farmer.entity.*;
+import com.farmer.Farm_expense.CropCycle.*;
 import com.farmer.add_region_page.FarmPage.Farm;
-import com.farmer.dto.CropCycleDTO;
 
 
 

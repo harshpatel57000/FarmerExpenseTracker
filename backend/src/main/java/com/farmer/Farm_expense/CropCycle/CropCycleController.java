@@ -1,15 +1,13 @@
-package com.farmer.controller;
+package com.farmer.Farm_expense.CropCycle;
 
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
-
-import com.farmer.dto.CropCycleDTO;
-import com.farmer.entity.CropCycle;
-import com.farmer.service.*;
 
 @RestController
 @RequestMapping("/api/cropcycle")
@@ -20,11 +18,11 @@ public class CropCycleController{
     }
 
     @PostMapping
-    public ResponseEntity<CropCycleDTO> addCrop(@RequestBody CropCycleDTO dto){
+    public ResponseEntity<CropCycleDTO> addCrop(@Valid @RequestBody CropCycleDTO dto){
         return ResponseEntity.ok(cropcycleService.addCrop(dto));
     } 
     @PutMapping("/{id}/complete")
-    public CropCycle completecrop(@PathVariable Long id,@RequestBody Map<String,String> request){
+    public CropCycle completecrop(@Valid @PathVariable Long id,@RequestBody Map<String,String> request){
         String endDate =request.get("endDate");
         return cropcycleService.completeCrop(id,endDate);
     }
