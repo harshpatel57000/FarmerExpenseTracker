@@ -30,7 +30,10 @@ public class UserController {
 
      if(user == null) return "user not found";
 
-     return "User is Found";
+     if(!userService.checkPassword(request.getPassword(),user.getPassword())) return "Invalid password";
+
+
+     return "Login successful";
     }
 
     if(request.getPhoneNumber() != null){
@@ -39,7 +42,9 @@ public class UserController {
 
         if(user == null) return "user not Found";
 
-        return "User is Found";
+        if(!userService.checkPassword(request.getPassword(),user.getPassword())) return "Invalid password";
+
+        return "Login successful";
     }
 
         return "invalid request data";
@@ -50,5 +55,5 @@ public class UserController {
         userService.signUp(sign);
         return "signup completed";
     }
-    
+
 }
