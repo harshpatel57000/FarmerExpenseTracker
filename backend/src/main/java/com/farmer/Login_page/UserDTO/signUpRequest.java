@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter 
 @Getter 
 @AllArgsConstructor 
-public class signUpRequest {
+public class signupRequest {
 
     @NotBlank(message="Please,Enter Name!")
     private String userName;

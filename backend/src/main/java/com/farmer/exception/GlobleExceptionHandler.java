@@ -15,8 +15,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobleExceptionHandler {
     @ExceptionHandler(ErrorException.class)
-    public ResponseEntity<String> handlerErrorException(ErrorException ex){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handlerErrorException(ErrorException ex) {
+
+    ErrorResponse errorResponse = new ErrorResponse(ex.getStatus().value(),ex.getMessage(),LocalDateTime.now());
+    return ResponseEntity.status(ex.getStatus()).body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -29,15 +31,11 @@ public class GlobleExceptionHandler {
     public ResponseEntity<ErrorResponse>handleValidationException(
         MethodArgumentNotValidException exception){
 
-        List<String> message = exception.getBindingResult()
-            .getFieldErrors().stream().map(error ->error.getDefaultMessage()).toList();
+        List<String> message = exception.getBindingResult().getFieldErrors().stream().map(error ->error.getDefaultMessage()).toList();
 
-            ErrorResponse errorResponse = new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(),message,LocalDateTime.now());
+            ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),message,LocalDateTime.now());
 
-         return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

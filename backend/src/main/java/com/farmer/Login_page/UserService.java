@@ -1,10 +1,11 @@
 package com.farmer.Login_page;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.farmer.Login_page.UserDTO.loginRequest;
-import com.farmer.Login_page.UserDTO.signUpRequest;
+import com.farmer.Login_page.UserDTO.signupRequest;
 import com.farmer.exception.ErrorException;
 
 import lombok.AllArgsConstructor;
@@ -34,19 +35,19 @@ public class UserService {
                      
                     }
         if(user == null){
-            throw new ErrorException("user not Found!");
+            throw new ErrorException("user not Found!",HttpStatus.UNAUTHORIZED);
         }
 
         
          if(!checkPassword(request.getPassword(),user.getPassword())){
-            throw new ErrorException("Invalid Password!");
+            throw new ErrorException("Invalid Password!",HttpStatus.UNAUTHORIZED);
          }
 
          return user;
 
     }   
 
-    public User signUp(signUpRequest sign){
+    public User signUp(signupRequest sign){
         User user=new User();
 
         if(userRepository.findByEmailId(sign.getEmailId()).isPresent()){
