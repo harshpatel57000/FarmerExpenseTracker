@@ -7,11 +7,10 @@ import org.springframework.stereotype.Service;
 import com.farmer.Login_page.UserDTO.loginRequest;
 import com.farmer.Login_page.UserDTO.loginResponse;
 import com.farmer.Login_page.UserDTO.signupRequest;
+import com.farmer.Login_page.jwt_token.JwtService;
 import com.farmer.exception.ErrorException;
 
 import lombok.AllArgsConstructor;
-
-import com.farmer.Login_page.jwt.JwtService;
 
 @AllArgsConstructor 
 @Service

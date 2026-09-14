@@ -1,4 +1,4 @@
-package com.farmer.Login_page.jwt;
+package com.farmer.Login_page.jwt_token;
 
 
 import io.jsonwebtoken.Jwts;
@@ -17,7 +17,7 @@ public class JwtService {
 
     private final long expiration = 1000 * 60 * 60; // 1 hour
 
-    private SecretKey getKey() {
+    private  SecretKey getKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
@@ -32,6 +32,20 @@ public class JwtService {
                 .compact();
     }
 
+
+    public  boolean isTokenValid(String jwt) {
+    try {
+        Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(jwt);
+
+        return true;
+
+    } catch (Exception e) {
+        return false;
+    }
+}
     
 
 }
