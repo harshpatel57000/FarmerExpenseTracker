@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Setter 
 @Getter
-public  class singupResponse {
+public  class signupResponse {
 
     
 
@@ -19,7 +19,7 @@ public  class singupResponse {
 
     private String phoneNumber;
 
-    public singupResponse(User user) {
+    public signupResponse(User user) {
         this.id=user.getId();
         this.userName=user.getUserName();
         this.emailId=user.getEmailId();

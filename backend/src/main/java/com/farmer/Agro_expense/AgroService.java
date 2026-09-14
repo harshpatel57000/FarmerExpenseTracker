@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.farmer.Agro_expense.enumValue.ValueUnit;
+import com.farmer.Login_page.User;
+import com.farmer.Login_page.UserRepository;
 import com.farmer.exception.ErrorException;
 
 import lombok.RequiredArgsConstructor;
@@ -15,11 +17,13 @@ import lombok.RequiredArgsConstructor;
 public class AgroService {
 
 private final AgroRepository agroRepository;
+private final UserRepository userRepository;
  
 //POST
     public AgroDTO addAgro(AgroDTO dto) {
+        User user=userRepository.findById(dto.getUserId()).orElseThrow(()-> new ErrorException("user not Found"));
 
-        Agro agro = AgroMapper.toEntity(dto);
+        Agro agro = AgroMapper.toEntity(dto,user);
 
         double totalWeight =agro.getQuantity().getValue()* agro.getMeasurement().getValue();
 

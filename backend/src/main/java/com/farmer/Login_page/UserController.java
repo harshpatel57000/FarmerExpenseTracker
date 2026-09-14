@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.farmer.Login_page.UserDTO.loginRequest;
 import com.farmer.Login_page.UserDTO.loginResponse;
 import com.farmer.Login_page.UserDTO.signupRequest;
-import com.farmer.Login_page.UserDTO.singupResponse;
+import com.farmer.Login_page.UserDTO.signupResponse;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -26,17 +26,16 @@ public class UserController {
     
     @PostMapping("/login")
     public loginResponse loginRequest(@Valid @RequestBody loginRequest request){
-        User user=userService.login(request);
+        return userService.login(request);
 
-     return new loginResponse(user);
     }
 
     
 
     @PostMapping("/signup")
-    public singupResponse signUp(@Valid @RequestBody signupRequest sign){
+    public signupResponse signUp(@Valid @RequestBody signupRequest sign){
        User user= userService.signUp(sign);
-        return new singupResponse(user);
+        return new signupResponse(user);
     }
 
 }

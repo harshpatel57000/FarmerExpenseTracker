@@ -5,10 +5,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.farmer.Login_page.UserDTO.loginRequest;
+import com.farmer.Login_page.UserDTO.loginResponse;
 import com.farmer.Login_page.UserDTO.signupRequest;
 import com.farmer.exception.ErrorException;
 
 import lombok.AllArgsConstructor;
+
+import com.farmer.Login_page.jwt.JwtService;
 
 @AllArgsConstructor 
 @Service
@@ -16,8 +19,10 @@ public class UserService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public User login(loginRequest request){
+    //LOGIN USER//
+    public loginResponse login(loginRequest request){
 
         User user;
 
@@ -42,11 +47,14 @@ public class UserService {
          if(!checkPassword(request.getPassword(),user.getPassword())){
             throw new ErrorException("Invalid Password!",HttpStatus.UNAUTHORIZED);
          }
+        String token = jwtService.generateToken(user.getId(),user.getEmailId());
 
-         return user;
+    return new loginResponse(user.getId(),user.getUserName(),user.getEmailId(),user.getPhoneNumber(),token);
 
     }   
 
+
+    //SIGNUP USER//
     public User signUp(signupRequest sign){
         User user=new User();
 

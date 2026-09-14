@@ -2,12 +2,14 @@ package com.farmer.Agro_expense;
 
 
 import com.farmer.Agro_expense.enumValue.ValueUnit;
+import com.farmer.Login_page.User;
 
 public class AgroMapper {
 
-    public static Agro toEntity(AgroDTO dto) {
+    public static Agro toEntity(AgroDTO dto,User user) {
 
         return Agro.builder()
+            .user(user)
             .productName(dto.getProductName())
             .quantity(toEntity(dto.getQuantity()))
             .measurement(toEntity(dto.getMeasurement()))
@@ -33,6 +35,7 @@ public class AgroMapper {
     public static AgroDTO toDTO(Agro entity) {
 
         return AgroDTO.builder()
+            .userId(entity.getUser().getId())
             .productName(entity.getProductName())
             .quantity(toDTO(entity.getQuantity()))
             .measurement(toDTO(entity.getMeasurement()))

@@ -2,6 +2,8 @@ package com.farmer.Agro_expense;
 
 import java.time.LocalDate;
 
+import com.farmer.Login_page.User;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -13,6 +15,9 @@ public class AgroDTO {
     
 
     private Long id;
+    
+    @NotNull(message="!Please,Enter UserId")
+    private Long userId;
     
     @NotNull(message="!Please,Enter Name")
     private String productName;

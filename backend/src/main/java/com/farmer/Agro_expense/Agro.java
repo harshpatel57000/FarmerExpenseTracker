@@ -1,6 +1,8 @@
 package com.farmer.Agro_expense;
 
 import com.farmer.Agro_expense.enumValue.ValueUnit;
+import com.farmer.Login_page.User;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +20,10 @@ public class Agro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
     private Long id;
+
+    @ManyToOne
+    @JoinColumn(name="user_Id",nullable=false)
+    public User user;
 
     @Column(nullable = false)
     private String productName;
