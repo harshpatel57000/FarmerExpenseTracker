@@ -19,7 +19,7 @@ import com.farmer.Login_page.UserService;
 
  @AllArgsConstructor 
 @RestController 
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 public class UserController {
 
     private final UserService userService;

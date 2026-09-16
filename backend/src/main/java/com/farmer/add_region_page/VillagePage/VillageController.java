@@ -25,14 +25,14 @@ public class VillageController {
     }
     
     @PostMapping
-    public ResponseEntity<String> addVillage(@Valid @RequestBody VillageDTO villagedto) {
-             try{
-        villageService.addVillage(villagedto);
+    public ResponseEntity<String> addVillage(@Valid @RequestBody VillageDTO villageDTO) {
+
+        villageService.addVillage(villageDTO);
+
         return ResponseEntity.ok("VILLAGE IS ADDED");
-             }catch(Exception e){
-        return ResponseEntity.ok(villagedto.getName()+"  VILLAGE IS ALREADY.EXIST");
-             }
     }
+
+
 
     @GetMapping
     public ResponseEntity<Map<String,List<VillageDTO>>> getAllVillage() {

@@ -5,16 +5,14 @@ import com.farmer.Login_page.User;
 public class VillageDTO {
 
     private Long id;
-    private Long userId;
     private String name;
     private String pinCode;
 
     public VillageDTO() {
     }
 
-    public VillageDTO(Long id,Long userId, String name, String pinCode) {
+    public VillageDTO(Long id, String name, String pinCode) {
         this.id = id;
-        this.userId=userId;
         this.name = name;
         this.pinCode = pinCode;
     }
@@ -42,11 +40,7 @@ public class VillageDTO {
     public void setPinCode(String pinCode) {
         this.pinCode = pinCode;
     }
-    public Long getUserId(){
-        return userId;
-    }
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    
+    
 
 }

@@ -1,6 +1,9 @@
 package com.farmer.add_region_page.VillagePage;
 
 
+
+import java.util.Set;
+
 import com.farmer.Login_page.User;
 
 import jakarta.persistence.*;
@@ -15,13 +18,13 @@ public class Village {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name="user_Id",nullable=false)
-    private User user;
-
+    @ManyToMany(mappedBy ="villages")
+    private Set<User> users;
+    
+    
     private String name;
 
-    @Column(name = "pin_code", unique = true, nullable = false)
+    @Column(name = "pin_code", nullable = false)
     private String pinCode;
 
     //jpa
@@ -29,8 +32,7 @@ public class Village {
     }
 
     //mapper
-    public Village(User user,String name, String pinCode) {
-        this.user=user;
+    public Village(String name, String pinCode) {
         this.name = name;
         this.pinCode = pinCode;
         
@@ -59,7 +61,10 @@ public class Village {
     public void setPinCode(String pinCode) {
         this.pinCode = pinCode;
     }
-    public Long getUserId(){
-        return user.getId();
+    public void setUser(Set<User> user){
+       this.users=users;
+    }
+    public Set<User> getUser(){
+        return users;
     }
 }

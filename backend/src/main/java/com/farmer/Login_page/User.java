@@ -1,5 +1,9 @@
 package com.farmer.Login_page;
 
+import java.util.Set;
+
+import com.farmer.add_region_page.VillagePage.Village;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +22,14 @@ public class User {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToMany
+    @JoinTable(
+        name = "user_village",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "village_id"))
+    private Set<Village> villages;
+
+    
     @Column(nullable=false)
     private String userName;
 

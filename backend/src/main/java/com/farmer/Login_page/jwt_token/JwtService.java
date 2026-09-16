@@ -42,10 +42,17 @@ public class JwtService {
 
         return true;
 
-    } catch (Exception e) {
-        return false;
+         } catch (Exception e) {
+            return false;
+            }
     }
-}
     
+    public String extractUsername(String jwt){
+        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().getSubject();
+    }
+
+    public Long extractUserId(String jwt){
+        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().get("userId",Long.class);
+    }
 
 }
