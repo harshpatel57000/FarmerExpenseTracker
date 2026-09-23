@@ -1,5 +1,6 @@
 package com.farmer.Login_page;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.farmer.add_region_page.VillagePage.Village;
@@ -27,7 +28,7 @@ public class User {
         name = "user_village",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "village_id"))
-    private Set<Village> villages;
+    private Set<Village> villages=new HashSet<>();
 
     
     @Column(nullable=false)

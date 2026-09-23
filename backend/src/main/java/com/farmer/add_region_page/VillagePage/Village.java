@@ -2,6 +2,7 @@ package com.farmer.add_region_page.VillagePage;
 
 
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.farmer.Login_page.User;
@@ -19,7 +20,7 @@ public class Village {
     private Long id;
 
     @ManyToMany(mappedBy ="villages")
-    private Set<User> users;
+    private Set<User> users=new HashSet<>();
     
     
     private String name;
@@ -61,10 +62,10 @@ public class Village {
     public void setPinCode(String pinCode) {
         this.pinCode = pinCode;
     }
-    public void setUser(Set<User> user){
+    public void setUser(Set<User> users){
        this.users=users;
     }
-    public Set<User> getUser(){
+    public Set<User> getUsers(){
         return users;
     }
 }

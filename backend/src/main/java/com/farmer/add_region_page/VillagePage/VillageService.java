@@ -1,5 +1,6 @@
 package com.farmer.add_region_page.VillagePage;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -21,18 +22,29 @@ public class VillageService {
     }
 
     //POST
-    public VillageDTO addVillage(VillageDTO villagedto){
+    public String addVillage(VillageDTO villagedto){
 
         String emailId=SecurityContextHolder.getContext().getAuthentication().getName();
         User user=userRepository.findByEmailId(emailId).orElseThrow(()-> new ErrorException("User Not Found!"));
 
-        Village village=VillageMapper.toEntity(villagedto);
-        Village villageEntity= villageRepository.save(village);
-       
-        user.getVillages().add(villageEntity);
+        Village village=villageRepository.findByNameAndPinCode(villagedto.getName(),villagedto.getPinCode()).orElseGet(() ->{
+
+        Village newVillage=VillageMapper.toEntity(villagedto);
+
+        return villageRepository.save(newVillage);
+        });
+        
+        //village available in user's villages
+        if(user.getVillages().contains(village)){
+            return "Village AllReaddy Available";
+        }
+        user.getVillages().add(village);
+
+        village.getUsers().add(user);
+
         userRepository.save(user);
        
-        return VillageMapper.toDTO(villageEntity);
+        return "Village is Added";
     }
 
     //GET ALL

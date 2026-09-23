@@ -8,7 +8,8 @@ public interface VillageRepository extends JpaRepository<Village, Long>{
     boolean existsByNameIgnoreCase(String name);
 
     // Find village by PIN code
-    Optional<Village> findByPinCode(String pinCode);
+    Optional<Village> findByNameAndPinCode(String name,String pinCode);
+    
 
     // Check duplicate PIN code
     boolean existsByPinCode(String pinCode);

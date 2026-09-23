@@ -27,9 +27,9 @@ public class VillageController {
     @PostMapping
     public ResponseEntity<String> addVillage(@Valid @RequestBody VillageDTO villageDTO) {
 
-        villageService.addVillage(villageDTO);
+        String message = villageService.addVillage(villageDTO);
 
-        return ResponseEntity.ok("VILLAGE IS ADDED");
+        return ResponseEntity.ok(message);
     }
 
 
