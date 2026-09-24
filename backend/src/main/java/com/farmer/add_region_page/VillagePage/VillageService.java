@@ -1,6 +1,5 @@
 package com.farmer.add_region_page.VillagePage;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +35,7 @@ public class VillageService {
         
         //village available in user's villages
         if(user.getVillages().contains(village)){
-            return "Village AllReaddy Available";
+            return "Village already available";
         }
         user.getVillages().add(village);
 
@@ -44,23 +43,23 @@ public class VillageService {
 
         userRepository.save(user);
        
-        return "Village is Added";
+        return "Village added successfully";
     }
 
     //GET ALL
-    public List<VillageDTO> getAllVillage() {
+    public List<VillageDTO> getAllVillage(){
 
         return villageRepository.findAll().stream().map(VillageMapper::toDTO).toList();
     };
     
     //GET BY ID
-    public VillageDTO getVillageById(Long id) {
+    public VillageDTO getVillageById(Long id){
         return VillageMapper.toDTO(villageRepository.findById(id)
                 .orElseThrow(() -> new ErrorException("Village not found")));
     }
 
     //delete
-    public void deleteVillage(Long id) {
+    public void deleteVillage(Long id){
         villageRepository.deleteById(id);
     }
 

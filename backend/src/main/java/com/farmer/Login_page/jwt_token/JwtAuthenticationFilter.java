@@ -44,12 +44,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
              return;
         }
         
+        if(SecurityContextHolder.getContext().getAuthentication() == null){
         String emailId=jwtService.extractUsername(jwt);
 
         UsernamePasswordAuthenticationToken authenticationName=new UsernamePasswordAuthenticationToken(emailId,null,Collections.emptyList());
 
         SecurityContextHolder.getContext().setAuthentication(authenticationName);
-
+        }
 
 
         filterChain.doFilter(request, response);
