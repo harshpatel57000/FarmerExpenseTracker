@@ -38,9 +38,7 @@ public class FarmExpenseService {
         entity.setExpenseName(dto.getExpenseName());
         entity.setNumberOfWorkers(dto.getNumberOfWorkers());
         entity.setPricePerWorker(dto.getPricePerWorker());
-        entity.setTeaOfCost(dto.getTeaOfCost());
-        entity.setBreackfastCost(dto.getBreackfastCost());
-        entity.setCost135(dto.getCost135());
+        entity.setExtraCost(dto.getExtraCost());
         entity.setExpenseDate(dto.getExpenseDate());
         entity.setTotalCost(dto.getTotalCost());
         return FarmExpenseMapper.toDTO(entity);
@@ -62,16 +60,8 @@ public class FarmExpenseService {
             entity.setPricePerWorker(dto.getPricePerWorker());
         }
 
-        if(dto.getTeaOfCost() != null){
-            entity.setTeaOfCost(dto.getTeaOfCost());
-        }
-
-        if(dto.getCost135() != null){
-            entity.setCost135(dto.getCost135());
-        }
-        
-        if(dto.getBreackfastCost() !=null){
-            entity.setBreackfastCost(dto.getBreackfastCost());
+        if(dto.getExtraCost()!=null){
+            entity.setExtraCost(dto.getExtraCost());
         }
 
         if(dto.getExpenseDate() != null){

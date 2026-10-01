@@ -18,6 +18,7 @@ public class Farm {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private  Long id;
 
+    
     private String name;
 
     private Double area;

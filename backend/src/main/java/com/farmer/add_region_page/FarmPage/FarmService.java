@@ -22,7 +22,7 @@ public class FarmService {
     //POST FARM
     public FarmDTO addFarm(FarmDTO dto) {
 
-        Region region = regionRepository.findById(dto.getRegionId()).orElseThrow(() -> new RuntimeException("Region not found"));
+        Region region = regionRepository.findById(dto.getRegionId()).orElseThrow(() -> new ErrorException("Region not found"));
 
         Farm farm = FarmMapper.toENTITY(dto, region);
         return FarmMapper.toDTO(farmRepository.save(farm));

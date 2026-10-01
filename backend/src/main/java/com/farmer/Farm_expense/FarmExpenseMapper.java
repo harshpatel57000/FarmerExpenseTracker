@@ -13,9 +13,7 @@ public class FarmExpenseMapper {
                 .expenseName(dto.getExpenseName())
                 .numberOfWorkers(dto.getNumberOfWorkers())
                 .pricePerWorker(dto.getPricePerWorker())
-                .teaOfCost(dto.getTeaOfCost())
-                .cost135(dto.getCost135())
-                .breackfastCost(dto.getBreackfastCost())
+                .ExtraCost(dto.getExtraCost())
                 .expenseDate(dto.getExpenseDate())
                 .totalCost(dto.getTotalCost()).build();
     }
@@ -26,9 +24,7 @@ public class FarmExpenseMapper {
                 .expenseName(entity.getExpenseName())
                 .numberOfWorkers(entity.getNumberOfWorkers())
                 .pricePerWorker(entity.getPricePerWorker())
-                .teaOfCost(entity.getTeaOfCost())
-                .cost135(entity.getCost135())
-                .breackfastCost(entity.getBreackfastCost())
+                .ExtraCost(entity.getExtraCost())
                 .expenseDate(entity.getExpenseDate())
                 .totalCost(entity.getTotalCost()).build();  
     }

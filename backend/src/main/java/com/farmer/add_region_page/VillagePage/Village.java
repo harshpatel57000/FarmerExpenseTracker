@@ -25,6 +25,7 @@ public class Village {
     
     private String name;
 
+    
     @Column(name = "pin_code", nullable = false)
     private String pinCode;
 

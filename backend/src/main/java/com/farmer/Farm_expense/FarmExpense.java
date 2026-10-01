@@ -32,14 +32,9 @@ public class FarmExpense {
     @Column(name="price_per_worker",nullable=false)
     private Float pricePerWorker;
 
-    @Column(name="tea_of_cost",nullable=true)
-    private Float teaOfCost;
+    @Column(name="moreCost",nullable=true)
+    private Float ExtraCost;
 
-    @Column(name="135_cost",nullable=true)
-    private Float cost135;
-
-    @Column (name="breack_fast_cost",nullable=true)
-    private Float breackfastCost;
 
     @Column(name="date",nullable=false)
     private LocalDate expenseDate;

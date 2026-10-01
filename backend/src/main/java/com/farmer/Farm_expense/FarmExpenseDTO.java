@@ -28,11 +28,7 @@ public class FarmExpenseDTO {
     @NotNull(message="!Please,Enter Prise of given to Worker")
     private Float pricePerWorker;
 
-    private Float teaOfCost;
-
-    private Float cost135;
-
-    private Float breackfastCost;
+    private Float ExtraCost;
 
     @NotNull(message="!Please,Enter Date Of Expense")
     private LocalDate expenseDate;

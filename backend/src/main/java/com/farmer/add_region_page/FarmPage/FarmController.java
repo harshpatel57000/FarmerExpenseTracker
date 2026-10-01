@@ -2,6 +2,8 @@ package com.farmer.add_region_page.FarmPage;
 
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 @RestController
 @RequestMapping("/api/farm")
@@ -13,7 +15,7 @@ public class FarmController {
         this.farmService=farmService;
     }
     @PostMapping
-    public FarmDTO addFarm(@RequestBody FarmDTO farmdto){
+    public FarmDTO addFarm(@Valid @RequestBody FarmDTO farmdto){
         return farmService.addFarm(farmdto);
     }
 

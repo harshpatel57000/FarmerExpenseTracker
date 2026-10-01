@@ -1,11 +1,17 @@
 package com.farmer.add_region_page.VillagePage;
 
-import com.farmer.Login_page.User;
+
+import jakarta.validation.constraints.NotNull;
 
 public class VillageDTO {
 
+
     private Long id;
+
+    @NotNull(message="Please,Enter Village Name!")
     private String name;
+
+    @NotNull(message="Please,Enter Pincode!")
     private String pinCode;
 
     public VillageDTO() {

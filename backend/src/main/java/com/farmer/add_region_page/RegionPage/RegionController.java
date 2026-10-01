@@ -2,6 +2,8 @@ package com.farmer.add_region_page.RegionPage;
 
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 
@@ -16,7 +18,7 @@ public class RegionController {
   }
 
   @PostMapping
-  public RegionDTO addRegion(@RequestBody RegionDTO dto){
+  public RegionDTO addRegion(@Valid @RequestBody RegionDTO dto){
     return regionService.addRegion(dto);
   }
 
