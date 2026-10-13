@@ -1,6 +1,5 @@
 package com.farmer.Login_page.jwt_token;
 
-
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -12,18 +11,16 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-
-
 @Service
 public class JwtService {
 
     @Value("${jwt.secret}")
-    private  String secret;
+    private String secret;
 
     @Value("${jwt.expiration}")
-    private  long expiration;
+    private long expiration;
 
-    private  SecretKey getKey() {
+    private SecretKey getKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -38,27 +35,26 @@ public class JwtService {
                 .compact();
     }
 
+    public boolean isTokenValid(String jwt) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getKey())
+                    .build()
+                    .parseSignedClaims(jwt);
 
-    public  boolean isTokenValid(String jwt) {
-    try {
-        Jwts.parser()
-                .verifyWith(getKey())
-                .build()
-                .parseSignedClaims(jwt);
+            return true;
 
-        return true;
-
-         } catch (Exception e) {
+        } catch (Exception e) {
             return false;
-            }
+        }
     }
-    
-    public String extractUsername(String jwt){
+
+    public String extractEmail(String jwt) {
         return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().getSubject();
     }
 
-    public Long extractUserId(String jwt){
-        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().get("userId",Long.class);
+    public Long extractUserId(String jwt) {
+        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().get("userId", Long.class);
     }
 
 }

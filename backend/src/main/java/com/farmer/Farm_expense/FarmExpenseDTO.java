@@ -1,39 +1,49 @@
+
 package com.farmer.Farm_expense;
 
 import java.time.LocalDate;
 
-import io.micrometer.common.lang.NonNull;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Builder 
-@Getter 
-@Setter
-@AllArgsConstructor 
-@NoArgsConstructor 
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+@Builder
 public class FarmExpenseDTO {
 
     private Long id;
 
-    @NotNull(message="!please,Enter Name of Expense")
+    @NotNull(message = "Please enter the Farm ID")
+    private Long farmId;
+
+    @NotNull(message = "Please enter the Expense Type")
+    private ExpenseType expenseType;
+
+    @NotBlank(message = "Please enter the Expense Name")
     private String expenseName;
 
-    @NotNull(message="!Please,Enter Number of Worker")
-    private Integer numberOfWorkers;
+    // Required only for Agro Expense
+    private Double agroQuantity;
 
-    @NotNull(message="!Please,Enter Prise of given to Worker")
-    private Float pricePerWorker;
+    // Required only for Agro Expense
+    private Double totalAgroExpense;
 
-    private Float ExtraCost;
+    private Double numberOfWorkers;
 
-    @NotNull(message="!Please,Enter Date Of Expense")
+    private Double pricePerWorker;
+
+    private Double totalExpenseOfWorkers;
+
+    private Double extraCost;
+
+    @NotNull(message = "Please enter the Expense Date")
     private LocalDate expenseDate;
 
-    @NotNull(message="Give Total")
-    private Float totalCost;
-
+    @NotNull(message = "Please enter the Total Cost")
+    private Double totalCost;
 }

@@ -22,24 +22,43 @@ public class FarmExpense {
     @Id 
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name="farm_id",nullable=false)
+    private Long farmId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="expense-type",nullable=false)
+    private ExpenseType expenseType;
+
     
     @Column(name="expense_name", nullable=false)
     private String expenseName;
 
-    @Column(name="worker_number",nullable=false)
-    private Integer numberOfWorkers;
+   
+    @Column(name="Agroquantity",nullable=true)
+    private Double AgroQuantity;
 
-    @Column(name="price_per_worker",nullable=false)
-    private Float pricePerWorker;
+    @Column(name="total_agro_expense",nullable=true)
+    private Double totalAgroExpense;
+    
+    
+    @Column(name="worker_number",nullable=true)
+    private Double numberOfWorkers;
 
-    @Column(name="moreCost",nullable=true)
-    private Float ExtraCost;
+    @Column(name="price_per_worker",nullable=true)
+    private Double pricePerWorker;
 
-
+    @Column(name="total_worker_Expense",nullable=true)
+    private Double totalExpenseOfWorkers;
+    
+    
+    @Column(name="ExtraCost",nullable=true)
+    private Double ExtraCost;
+    
+    
     @Column(name="date",nullable=false)
     private LocalDate expenseDate;
-
     @Column(name="total_cost",nullable=false)
-    private Float totalCost;    
+    private Double totalCost;    
 
 }

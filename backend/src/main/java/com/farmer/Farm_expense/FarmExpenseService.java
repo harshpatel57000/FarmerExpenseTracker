@@ -35,22 +35,43 @@ public class FarmExpenseService {
     public FarmExpenseDTO updateFarmExpense(Long id,FarmExpenseDTO dto){
         FarmExpense entity=farmExpenseRepository.findById(id).orElseThrow(()->new ErrorException("Farm Expese NotFound"));
 
-        entity.setExpenseName(dto.getExpenseName());
-        entity.setNumberOfWorkers(dto.getNumberOfWorkers());
-        entity.setPricePerWorker(dto.getPricePerWorker());
-        entity.setExtraCost(dto.getExtraCost());
-        entity.setExpenseDate(dto.getExpenseDate());
-        entity.setTotalCost(dto.getTotalCost());
-        return FarmExpenseMapper.toDTO(entity);
+        
+                entity.setExpenseType(dto.getExpenseType());
+                entity.setExpenseName(dto.getExpenseName());
+                entity.setAgroQuantity(dto.getAgroQuantity());
+                entity.setTotalAgroExpense(dto.getTotalAgroExpense());
+                entity.setNumberOfWorkers(dto.getNumberOfWorkers());
+                entity.setPricePerWorker(dto.getPricePerWorker());
+                entity.setTotalExpenseOfWorkers(dto.getTotalExpenseOfWorkers());
+                entity.setExtraCost(dto.getExtraCost());
+                entity.setExpenseDate(dto.getExpenseDate());
+                entity.setTotalCost(dto.getTotalCost());
+
+                FarmExpense updateEntity=farmExpenseRepository.save(entity);
+        return FarmExpenseMapper.toDTO(updateEntity);
     }
 
     //PATCH
     public FarmExpenseDTO patchFarmExpense(Long id,FarmExpenseDTO dto){
         FarmExpense entity=farmExpenseRepository.findById(id).orElseThrow(()->new ErrorException("Farm Expense Nopt FOund"));
 
+        if(dto.getExpenseType() != null){
+            entity.setExpenseType(dto.getExpenseType());
+        }
+
         if(dto.getExpenseName() != null){
             entity.setExpenseName(dto.getExpenseName());
         }
+
+
+        if(dto.getAgroQuantity() != null){
+            entity.setAgroQuantity(dto.getAgroQuantity());
+        }
+
+        if(dto.getTotalAgroExpense() != null){
+            entity.setTotalAgroExpense(dto.getTotalAgroExpense());
+        }
+
         
         if(dto.getNumberOfWorkers() != null){
             entity.setNumberOfWorkers(dto.getNumberOfWorkers());
@@ -60,6 +81,10 @@ public class FarmExpenseService {
             entity.setPricePerWorker(dto.getPricePerWorker());
         }
 
+        if(dto.getTotalExpenseOfWorkers() != null){
+            entity.setTotalExpenseOfWorkers(dto.getTotalExpenseOfWorkers());
+        }   
+        
         if(dto.getExtraCost()!=null){
             entity.setExtraCost(dto.getExtraCost());
         }
@@ -72,7 +97,9 @@ public class FarmExpenseService {
             entity.setTotalCost(dto.getTotalCost());
         }
 
-        return FarmExpenseMapper.toDTO(entity);
+        FarmExpense updatedEntity = farmExpenseRepository.save(entity);
+
+        return FarmExpenseMapper.toDTO(updatedEntity);
     }
     
     //DELETE

@@ -1,6 +1,9 @@
+
 import 'package:flutter/material.dart';
-import 'create_account_page.dart';
+
 import 'home_page.dart';
+import 'create_account_page.dart';
+import 'services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,503 +13,483 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // ============================================================
-  // CONTROLLERS
-  // ============================================================
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController emailController =
-      TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final otpController = TextEditingController();
 
-  final TextEditingController mobileController =
-      TextEditingController();
+  bool isOtpMode = false;
+  bool otpSent = false;
+  bool passwordVisible = false;
+  bool isLoading = false;
 
-  final TextEditingController passwordController =
-      TextEditingController();
-
-  final TextEditingController otpController =
-      TextEditingController();
-
-  // ============================================================
-  // VARIABLES
-  // ============================================================
-
-  bool isPasswordVisible = false;
-
-  bool showOtp = false;
-
-  // ============================================================
-  // DISPOSE
-  // ============================================================
+  static const Color green = Color(0xFF247A43);
+  static const Color lightGreen = Color(0xFFEAF5EC);
 
   @override
   void dispose() {
     emailController.dispose();
-    mobileController.dispose();
     passwordController.dispose();
     otpController.dispose();
-
     super.dispose();
   }
 
-  // ============================================================
-  // LOGIN
-  // ============================================================
+  void showMessage(String message) {
+    if (!mounted) return;
 
-  void loginUser() {
-    final email =
-        emailController.text.trim();
-
-    final mobile =
-        mobileController.text.trim();
-
-    final password =
-        passwordController.text.trim();
-
-    // Email OR Mobile required
-    if (email.isEmpty && mobile.isEmpty) {
-      showMessage(
-        'ઈમેલ અથવા મોબાઈલ નંબર દાખલ કરો',
-      );
-      return;
-    }
-
-    // Password required
-    if (password.isEmpty) {
-      showMessage(
-        'પાસવર્ડ દાખલ કરો',
-      );
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // હાલ માટે સીધું Home Page પર જાય છે.
-    //
-    // પછી Spring Boot API સાથે login verification જોડશું.
-    // ----------------------------------------------------------
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-             HomePage()),
-      
-      
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  // ============================================================
-  // SHOW OTP
-  // ============================================================
+  Future<void> runRequest(
+    Future<void> Function() action,
+  ) async {
+    if (isLoading) return;
 
-  void showOtpLogin() {
-    setState(() {
-      showOtp = true;
+    setState(() => isLoading = true);
+
+    try {
+      await action();
+    } catch (e) {
+      showMessage(
+        e.toString().replaceFirst('Exception: ', ''),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  void openHome() {
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HomePage(),
+      ),
+      (route) => false,
+    );
+  }
+
+  String get emailOrPhone => emailController.text.trim();
+
+  bool get looksLikeEmail =>
+      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+          .hasMatch(emailOrPhone);
+
+  Future<void> passwordLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    await runRequest(() async {
+      await ApiService.loginWithPassword(
+        loginId: emailOrPhone,
+        password: passwordController.text,
+      );
+
+      openHome();
     });
   }
 
-  // ============================================================
-  // VERIFY OTP
-  // ============================================================
-
-  void verifyOtp() {
-    final otp =
-        otpController.text.trim();
-
-    if (otp.isEmpty) {
-      showMessage(
-        'OTP દાખલ કરો',
-      );
+  Future<void> sendOtp() async {
+    if (!looksLikeEmail) {
+      showMessage('કૃપા કરીને સાચો ઈમેલ દાખલ કરો');
       return;
     }
 
-    // ----------------------------------------------------------
-    // TODO:
-    // Spring Boot OTP API સાથે જોડવાનું બાકી છે.
-    // ----------------------------------------------------------
+    await runRequest(() async {
+      await ApiService.sendLoginOtp(
+        emailId: emailOrPhone,
+      );
 
-    showMessage(
-      'OTP ચકાસણી કરવામાં આવી',
-    );
+      if (!mounted) return;
+
+      otpController.clear();
+      setState(() => otpSent = true);
+
+      showMessage('તમારા ઈમેલ પર OTP મોકલવામાં આવ્યો છે');
+    });
   }
 
-  // ============================================================
-  // CREATE ACCOUNT
-  // ============================================================
+  Future<void> verifyOtp() async {
+    final otp = otpController.text.trim();
 
-  void createAccount() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const CreateAccountPage(),
-      ),
-    );
+    if (!looksLikeEmail) {
+      showMessage('કૃપા કરીને સાચો ઈમેલ દાખલ કરો');
+      return;
+    }
+
+    if (otp.isEmpty) {
+      showMessage('OTP દાખલ કરો');
+      return;
+    }
+
+    await runRequest(() async {
+      await ApiService.verifyLoginOtp(
+        emailId: emailOrPhone,
+        otp: otp,
+      );
+
+      openHome();
+    });
   }
 
-  // ============================================================
-  // MESSAGE
-  // ============================================================
-
-  void showMessage(
-    String message,
-  ) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior:
-            SnackBarBehavior.floating,
-      ),
-    );
+  void selectMethod(bool otpMode) {
+    setState(() {
+      isOtpMode = otpMode;
+      otpSent = false;
+      otpController.clear();
+      passwordController.clear();
+    });
   }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          Colors.white,
-
+      backgroundColor: const Color(0xFFF6F9F5),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 30,
-            ),
-
+            padding: const EdgeInsets.all(22),
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(
-                maxWidth: 450,
+              constraints: const BoxConstraints(
+                maxWidth: 440,
               ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 20),
 
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .stretch,
-
-                children: [
-
-                  // ==================================================
-                  // LOGO
-                  // ==================================================
-
-                  _buildLogo(),
-
-                  const SizedBox(
-                    height: 35,
-                  ),
-
-                  // ==================================================
-                  // TITLE
-                  // ==================================================
-
-                  const Text(
-                    'તમારું સ્વાગત છે.',
-                    textAlign:
-                        TextAlign.center,
-
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  const Text(
-                    'તમારા ખેતીના ખર્ચનું સંચાલન કરવા માટે લોગિન કરો',
-                    textAlign:
-                        TextAlign.center,
-
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 35,
-                  ),
-
-                  // ==================================================
-                  // EMAIL
-                  // ==================================================
-
-                  _buildTextField(
-                    controller:
-                        emailController,
-
-                    label:
-                        'ઈમેલ',
-
-                    hint:
-                        'તમારો ઈમેલ દાખલ કરો',
-
-                    icon:
-                        Icons.email_outlined,
-
-                    keyboardType:
-                        TextInputType
-                            .emailAddress,
-                  ),
-
-                  const SizedBox(
-                    height: 16,
-                  ),
-
-                  // ==================================================
-                  // MOBILE
-                  // ==================================================
-
-                  _buildTextField(
-                    controller:
-                        mobileController,
-
-                    label:
-                        'મોબાઈલ નંબર',
-
-                    hint:
-                        'તમારો મોબાઈલ નંબર દાખલ કરો',
-
-                    icon:
-                        Icons.phone_outlined,
-
-                    keyboardType:
-                        TextInputType.phone,
-                  ),
-
-                  const SizedBox(
-                    height: 16,
-                  ),
-
-                  // ==================================================
-                  // PASSWORD
-                  // ==================================================
-
-                  _buildTextField(
-                    controller:
-                        passwordController,
-
-                    label:
-                        'પાસવર્ડ',
-
-                    hint:
-                        'તમારો પાસવર્ડ દાખલ કરો',
-
-                    icon:
-                        Icons.lock_outline,
-
-                    obscureText:
-                        !isPasswordVisible,
-
-                    suffixIcon:
-                        IconButton(
-                      icon: Icon(
-                        isPasswordVisible
-                            ? Icons
-                                .visibility_off
-                            : Icons
-                                .visibility,
-                      ),
-
-                      onPressed: () {
-                        setState(() {
-                          isPasswordVisible =
-                              !isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 22,
-                  ),
-
-                  // ==================================================
-                  // LOGIN BUTTON
-                  // ==================================================
-
-                  SizedBox(
-                    height: 52,
-
-                    child:
-                        ElevatedButton(
-                      onPressed:
-                          loginUser,
-
-                      style:
-                          ElevatedButton
-                              .styleFrom(
-                        shape:
-                            RoundedRectangleBorder(
+                    // Farming logo
+                    Center(
+                      child: Container(
+                        height: 88,
+                        width: 88,
+                        decoration: BoxDecoration(
+                          color: lightGreen,
                           borderRadius:
-                              BorderRadius
-                                  .circular(
-                            12,
-                          ),
+                              BorderRadius.circular(26),
                         ),
-                      ),
-
-                      child:
-                          const Text(
-                        'લોગિન',
-                        style:
-                            TextStyle(
-                          fontSize: 17,
-                          fontWeight:
-                              FontWeight.bold,
+                        child: const Icon(
+                          Icons.agriculture_rounded,
+                          color: green,
+                          size: 52,
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(
-                    height: 16,
-                  ),
+                    const SizedBox(height: 20),
 
-                  // ==================================================
-                  // OTP LOGIN
-                  // ==================================================
-
-                  OutlinedButton.icon(
-                    onPressed:
-                        showOtpLogin,
-
-                    icon:
-                        const Icon(
-                      Icons.sms_outlined,
-                    ),
-
-                    label:
-                        const Text(
-                      'OTP વડે લોગિન કરો',
-                    ),
-
-                    style:
-                        OutlinedButton
-                            .styleFrom(
-                      minimumSize:
-                          const Size(
-                        double.infinity,
-                        50,
+                    const Text(
+                      'Farmer Expense Tracker',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: green,
                       ),
+                    ),
 
-                      shape:
-                          RoundedRectangleBorder(
+                    const SizedBox(height: 10),
+
+                    const Text(
+                      'તમારા ખેતીના ખર્ચનું સરળ સંચાલન',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black54,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Login card
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
                         borderRadius:
-                            BorderRadius
-                                .circular(
-                          12,
-                        ),
+                            BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withValues(alpha: 0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'તમારું સ્વાગત છે!',
+                            style: TextStyle(
+                              fontSize: 23,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 7),
+
+                          const Text(
+                            'લોગિન કરવાની રીત પસંદ કરો',
+                            style: TextStyle(
+                              color: Colors.black54,
+                            ),
+                          ),
+
+                          const SizedBox(height: 22),
+
+                          // Two login options
+                          Container(
+                            padding:
+                                const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: lightGreen,
+                              borderRadius:
+                                  BorderRadius.circular(13),
+                            ),
+                            child: Row(
+                              children: [
+                                _methodButton(
+                                  label: 'પાસવર્ડ',
+                                  icon: Icons.lock_outline,
+                                  selected: !isOtpMode,
+                                  onTap: () =>
+                                      selectMethod(false),
+                                ),
+                                _methodButton(
+                                  label: 'ઈમેલ OTP',
+                                  icon: Icons.mail_outline,
+                                  selected: isOtpMode,
+                                  onTap: () =>
+                                      selectMethod(true),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 22),
+
+                          // Email or phone for password login;
+                          // email only for OTP login.
+                          TextFormField(
+                            controller: emailController,
+                            keyboardType: isOtpMode
+                                ? TextInputType.emailAddress
+                                : TextInputType.text,
+                            autocorrect: false,
+                            decoration: _decoration(
+                              label: isOtpMode
+                                  ? 'ઈમેલ'
+                                  : 'ઈમેલ અથવા મોબાઈલ નંબર',
+                              hint: isOtpMode
+                                  ? 'તમારો ઈમેલ દાખલ કરો'
+                                  : 'ઈમેલ અથવા મોબાઈલ દાખલ કરો',
+                              icon: Icons.person_outline,
+                            ),
+                            validator: (value) {
+                              final text =
+                                  value?.trim() ?? '';
+
+                              if (text.isEmpty) {
+                                return 'ઈમેલ અથવા મોબાઈલ દાખલ કરો';
+                              }
+
+                              if (isOtpMode &&
+                                  !RegExp(
+                                    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                  ).hasMatch(text)) {
+                                return 'સાચો ઈમેલ દાખલ કરો';
+                              }
+
+                              return null;
+                            },
+                          ),
+
+                          if (!isOtpMode) ...[
+                            const SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: passwordController,
+                              obscureText: !passwordVisible,
+                              decoration: _decoration(
+                                label: 'પાસવર્ડ',
+                                hint: 'તમારો પાસવર્ડ દાખલ કરો',
+                                icon: Icons.lock_outline,
+                              ).copyWith(
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      passwordVisible =
+                                          !passwordVisible;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    passwordVisible
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (!isOtpMode &&
+                                    (value == null ||
+                                        value.isEmpty)) {
+                                  return 'પાસવર્ડ દાખલ કરો';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            _primaryButton(
+                              label: 'લોગિન કરો',
+                              icon: Icons.login,
+                              onPressed: passwordLogin,
+                            ),
+                          ],
+
+                          if (isOtpMode) ...[
+                            if (!otpSent) ...[
+                              const SizedBox(height: 22),
+
+                              _primaryButton(
+                                label: 'ઈમેલ પર OTP મોકલો',
+                                icon: Icons.mark_email_read_outlined,
+                                onPressed: sendOtp,
+                              ),
+                            ],
+
+                            if (otpSent) ...[
+                              Container(
+                                margin: const EdgeInsets.only(
+                                  top: 14,
+                                  bottom: 16,
+                                ),
+                                padding:
+                                    const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: lightGreen,
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'OTP મોકલ્યો છે: $emailOrPhone',
+                                  style: const TextStyle(
+                                    color: green,
+                                  ),
+                                ),
+                              ),
+
+                              TextFormField(
+                                controller: otpController,
+                                keyboardType:
+                                    TextInputType.number,
+                                maxLength: 6,
+                                decoration: _decoration(
+                                  label: 'OTP',
+                                  hint: 'OTP દાખલ કરો',
+                                  icon: Icons.password_outlined,
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              _primaryButton(
+                                label: 'ચકાસો અને લોગિન કરો',
+                                icon: Icons.verified_user_outlined,
+                                onPressed: verifyOtp,
+                              ),
+
+                              TextButton(
+                                onPressed: isLoading
+                                    ? null
+                                    : sendOtp,
+                                child: const Text(
+                                  'ફરીથી OTP મોકલો',
+                                  style: TextStyle(
+                                    color: green,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+
+                          if (isLoading) ...[
+                            const SizedBox(height: 18),
+                            const Center(
+                              child: CircularProgressIndicator(
+                                color: green,
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 20),
+                          const Divider(),
+                          const SizedBox(height: 8),
+
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment:
+                                WrapCrossAlignment.center,
+                            children: [
+                              const Text(
+                                'એકાઉન્ટ નથી? ',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const CreateAccountPage(),
+                                          ),
+                                        );
+                                      },
+                                child: const Text(
+                                  'નવું એકાઉન્ટ બનાવો',
+                                  style: TextStyle(
+                                    color: green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
 
-                  // ==================================================
-                  // OTP SECTION
-                  // ==================================================
+                    const SizedBox(height: 24),
 
-                  if (showOtp) ...[
-                    const SizedBox(
-                      height: 22,
-                    ),
-
-                    _buildTextField(
-                      controller:
-                          otpController,
-
-                      label:
-                          'OTP',
-
-                      hint:
-                          'OTP દાખલ કરો',
-
-                      icon:
-                          Icons
-                              .password_outlined,
-
-                      keyboardType:
-                          TextInputType
-                              .number,
-                    ),
-
-                    const SizedBox(
-                      height: 12,
-                    ),
-
-                    SizedBox(
-                      height: 48,
-
-                      child:
-                          ElevatedButton(
-                        onPressed:
-                            verifyOtp,
-
-                        child:
-                            const Text(
-                          'OTP ચકાસો',
-                          style:
-                              TextStyle(
-                            fontSize: 16,
-                          ),
-                        ),
+                    const Text(
+                      'તમારા ખેતરનો હિસાબ, હવે સરળતાથી.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black45,
+                        fontSize: 13,
                       ),
                     ),
                   ],
-
-                  const SizedBox(
-                    height: 28,
-                  ),
-
-                  // ==================================================
-                  // CREATE ACCOUNT
-                  // ==================================================
-
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .center,
-
-                    children: [
-
-                      const Text(
-                        'એકાઉન્ટ નથી? ',
-
-                        style:
-                            TextStyle(
-                          color:
-                              Colors.grey,
-                        ),
-                      ),
-
-                      TextButton(
-                        onPressed:
-                            createAccount,
-
-                        child:
-                            const Text(
-                          'નવું એકાઉન્ટ બનાવો',
-
-                          style:
-                              TextStyle(
-                            fontWeight:
-                                FontWeight
-                                    .bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -515,117 +498,113 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ============================================================
-  // LOGO
-  // ============================================================
-
-  Widget _buildLogo() {
-    return Center(
-      child: Container(
-        height: 90,
-        width: 90,
-
-        decoration:
-            BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(
-            22,
+  Widget _methodButton({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(
+            vertical: 13,
+            horizontal: 6,
           ),
-
-          color:
-              Colors.green.shade50,
-        ),
-
-        child:
-            Icon(
-          Icons.agriculture,
-          size: 50,
-          color:
-              Colors.green.shade700,
+          decoration: BoxDecoration(
+            color: selected ? green : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? Colors.white : green,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : green,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ============================================================
-  // TEXT FIELD
-  // ============================================================
-
-  Widget _buildTextField({
-    required TextEditingController
-        controller,
-
+  InputDecoration _decoration({
     required String label,
-
     required String hint,
-
     required IconData icon,
-
-    bool obscureText = false,
-
-    TextInputType keyboardType =
-        TextInputType.text,
-
-    Widget? suffixIcon,
   }) {
-    return TextField(
-      controller:
-          controller,
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: green),
+      filled: true,
+      fillColor: const Color(0xFFFAFCF9),
+      counterText: '',
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 17,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: const BorderSide(
+          color: Color(0xFFDCE6DC),
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: const BorderSide(
+          color: Color(0xFFDCE6DC),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(13),
+        borderSide: const BorderSide(
+          color: green,
+          width: 1.7,
+        ),
+      ),
+    );
+  }
 
-      obscureText:
-          obscureText,
-
-      keyboardType:
-          keyboardType,
-
-      decoration:
-          InputDecoration(
-        labelText:
-            label,
-
-        hintText:
-            hint,
-
-        prefixIcon:
-            Icon(icon),
-
-        suffixIcon:
-            suffixIcon,
-
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
+  Widget _primaryButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton.icon(
+        onPressed: isLoading ? null : onPressed,
+        icon: Icon(icon, color: Colors.white),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
           ),
         ),
-
-        enabledBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
-          ),
-
-          borderSide:
-              const BorderSide(
-            color: Colors.grey,
-          ),
-        ),
-
-        focusedBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
-          ),
-
-          borderSide:
-              BorderSide(
-            color:
-                Colors.green.shade700,
-
-            width: 2,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: green,
+          disabledBackgroundColor: Colors.grey.shade400,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
           ),
         ),
       ),

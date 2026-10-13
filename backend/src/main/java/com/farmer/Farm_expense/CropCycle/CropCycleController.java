@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -26,4 +27,9 @@ public class CropCycleController{
         String endDate =request.get("endDate");
         return cropcycleService.completeCrop(id,endDate);
     }
+    @GetMapping("/farm/{farmId}")
+    public ResponseEntity<List<CropCycle>> getCropsByFarm(@PathVariable Long farmId) {
+
+    return ResponseEntity.ok(cropcycleService.getCropsByFarm(farmId));
+ }
 }

@@ -35,6 +35,7 @@ public class AgroMapper {
     public static AgroDTO toDTO(Agro entity) {
 
         return AgroDTO.builder()
+         .id(entity.getId())
             .userId(entity.getUser().getId())
             .productName(entity.getProductName())
             .quantity(toDTO(entity.getQuantity()))

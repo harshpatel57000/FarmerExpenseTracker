@@ -5,10 +5,10 @@ import 'total_expense_page.dart';
 import 'select_farm_page.dart';
 import 'profile_page.dart';
 import 'add_region/village_page.dart';
+import 'services/api_service.dart';
 
 class HomePage extends StatelessWidget {
-  
-   const HomePage({super.key});
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -106,11 +106,27 @@ class HomePage extends StatelessWidget {
 
               subtitle: 'ખાતર, દવા અને અન્ય કૃષિ વસ્તુની ખરીદી નોંધો',
 
-              onTap: () {
+              onTap: () async {
+                // Get the ID saved after login or signup OTP verification.
+                final userId = await ApiService.getUserId();
+
+                if (!context.mounted) return;
+
+                // Stop if no logged-in user's ID is available.
+                if (userId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('User ID not found. Please log in again.'),
+                    ),
+                  );
+                  return;
+                }
+
+                // Open Agro Expense with the actual logged-in user's ID.
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AgroExpensePage(),
+                    builder: (context) => AgroExpensePage(userId: userId),
                   ),
                 );
               },
@@ -131,9 +147,7 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const VillagePage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const VillagePage()),
                 );
               },
             ),

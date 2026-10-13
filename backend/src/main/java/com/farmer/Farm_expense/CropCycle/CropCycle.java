@@ -1,37 +1,42 @@
+
 package com.farmer.Farm_expense.CropCycle;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.farmer.add_region_page.FarmPage.Farm;
 
 import lombok.*;
-@Setter@Getter@Builder
+
+@Setter
+@Getter
+@Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="cropcycle")
+@Table(name = "cropcycle")
 public class CropCycle {
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne
-    @JoinColumn(name="farm_id",nullable=false)
+    @JoinColumn(name = "farm_id", nullable = false)
     private Farm farm;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private String cropName;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private LocalDate startDate;
 
-    @Column(nullable=true)
+    @Column(nullable = true)
     private LocalDate endDate;
 
-    @Column(nullable=false)
-    private String  status;
-
-    
+    @Column(nullable = false)
+    private String status;
 }

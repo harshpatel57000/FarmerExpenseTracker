@@ -6,6 +6,7 @@ import com.farmer.add_region_page.FarmPage.Farm;
 import com.farmer.add_region_page.FarmPage.FarmRepository;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class CropCycleService {
@@ -31,6 +32,10 @@ public class CropCycleService {
         crop.setStatus("completed");
         return cropcycleRepository.save(crop);
     } 
+
+    public List<CropCycle> getCropsByFarm(Long farmId) {
+    return cropcycleRepository.findByFarm_IdOrderByStartDateDesc(farmId);
+}
 
 
 }

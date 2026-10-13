@@ -1,10 +1,8 @@
+
 import 'package:flutter/material.dart';
+import 'services/api_service.dart';
 
 class FarmExpensePage extends StatefulWidget {
-  // ============================================================
-  // FARM INFORMATION
-  // ============================================================
-
   final String regionName;
   final String farmName;
   final int farmId;
@@ -23,891 +21,577 @@ class FarmExpensePage extends StatefulWidget {
 }
 
 class _FarmExpensePageState extends State<FarmExpensePage> {
-  // ============================================================
-  // CONTROLLERS
-  // ============================================================
+  // Expense type
+  String selectedExpenseType = 'Normal Expense';
+  bool isSavingExpense = false;
 
-  final TextEditingController laborCountController = TextEditingController();
-
-  final TextEditingController laborAmountController = TextEditingController();
-
-  final TextEditingController teaQuantityController = TextEditingController();
-
-  final TextEditingController teaPriceController = TextEditingController(
-    text: '65',
-  );
-
-  final TextEditingController panMasalaCountController =
+  // Normal expense controllers
+  final TextEditingController expenseNameController =
+      TextEditingController();
+  final TextEditingController normalLabourNumberController =
+      TextEditingController();
+  final TextEditingController normalLabourAmountController =
+      TextEditingController();
+  final TextEditingController normalExtraAmountController =
       TextEditingController();
 
-  final TextEditingController panMasalaPriceController =
+  // Agro expense controllers
+  final TextEditingController agroProductNameController =
+      TextEditingController();
+  final TextEditingController agroQuantityController =
+      TextEditingController();
+  final TextEditingController agroTotalAmountController =
+      TextEditingController();
+  final TextEditingController agroLabourNumberController =
+      TextEditingController();
+  final TextEditingController agroLabourAmountController =
+      TextEditingController();
+  final TextEditingController agroExtraAmountController =
       TextEditingController();
 
-  final TextEditingController snackPriceController = TextEditingController(
-    text: '15',
-  );
+  // Normal expense totals
+  double normalLabourTotal = 0;
+  double normalExtraTotal = 0;
+  double normalTotalExpense = 0;
 
-  // ============================================================
-  // VARIABLES
-  // ============================================================
+  // Agro expense totals
+  double agroProductTotal = 0;
+  double agroLabourTotal = 0;
+  double agroExtraTotal = 0;
+  double agroTotalExpense = 0;
 
-  String? selectedWorkType;
-
+  // Date
   DateTime selectedDate = DateTime.now();
 
-  double laborTotal = 0;
-  double teaTotal = 0;
-  double panMasalaTotal = 0;
-  double snackTotal = 0;
-  double grandTotal = 0;
-
-  // ============================================================
-  // WORK TYPES
-  //
-  // These depend on the current crop.
-  // ============================================================
-
-  List<String> get workTypes {
-    final crop = widget.cropType.toLowerCase();
-
-    // ----------------------------------------------------------
-    // COTTON
-    // ----------------------------------------------------------
-
-    if (crop == 'કપાસ' || crop == 'cotton') {
-      return [
-        'જમીન તૈયાર કરવી',
-        'વાવણી',
-        'નિંદામણ',
-        'ખાતર નાખવું',
-        'દવા છાંટવી',
-        'પાણી આપવું',
-        'કપાસ વીણવો',
-        'કાપણી',
-        'અન્ય કામ',
-      ];
-    }
-
-    // ----------------------------------------------------------
-    // WHEAT
-    // ----------------------------------------------------------
-
-    if (crop == 'ઘઉં' || crop == 'wheat') {
-      return [
-        'જમીન તૈયાર કરવી',
-        'વાવણી',
-        'ખાતર નાખવું',
-        'પાણી આપવું',
-        'દવા છાંટવી',
-        'કાપણી',
-        'અન્ય કામ',
-      ];
-    }
-
-    // ----------------------------------------------------------
-    // GROUNDNUT
-    // ----------------------------------------------------------
-
-    if (crop == 'મગફળી' || crop == 'groundnut') {
-      return [
-        'જમીન તૈયાર કરવી',
-        'વાવણી',
-        'નિંદામણ',
-        'ખાતર નાખવું',
-        'દવા છાંટવી',
-        'પાણી આપવું',
-        'મગફળી ઉપાડવી',
-        'કાપણી',
-        'અન્ય કામ',
-      ];
-    }
-
-    // ----------------------------------------------------------
-    // DEFAULT
-    // ----------------------------------------------------------
-
-    return [
-      'જમીન તૈયાર કરવી',
-      'વાવણી',
-      'નિંદામણ',
-      'ખાતર નાખવું',
-      'દવા છાંટવી',
-      'પાણી આપવું',
-      'કાપણી',
-      'લણણી',
-      'અન્ય કામ',
-    ];
+  String get formattedDate {
+    final day = selectedDate.day.toString().padLeft(2, '0');
+    final month = selectedDate.month.toString().padLeft(2, '0');
+    return '$day/$month/${selectedDate.year}';
   }
 
-  // ============================================================
-  // CALCULATE EXPENSES
-  // ============================================================
+  String get apiDate {
+    final year = selectedDate.year.toString().padLeft(4, '0');
+    final month = selectedDate.month.toString().padLeft(2, '0');
+    final day = selectedDate.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
 
-  void calculateExpenses() {
-    // ----------------------------------------------------------
-    // LABOR
-    // ----------------------------------------------------------
+  double _number(TextEditingController controller) {
+    return double.tryParse(controller.text.trim()) ?? 0;
+  }
 
-    final double laborCount = double.tryParse(laborCountController.text) ?? 0;
+  void calculateNormalExpense() {
+    normalLabourTotal =
+        _number(normalLabourNumberController) *
+        _number(normalLabourAmountController);
 
-    final double laborAmount = double.tryParse(laborAmountController.text) ?? 0;
+    normalExtraTotal = _number(normalExtraAmountController);
 
-    laborTotal = laborCount * laborAmount;
-
-    // ----------------------------------------------------------
-    // TEA
-    //
-    // Quantity = milliliters
-    // Price = price per liter
-    // ----------------------------------------------------------
-
-    final double teaQuantityMl =
-        double.tryParse(teaQuantityController.text) ?? 0;
-
-    final double teaPricePerLiter =
-        double.tryParse(teaPriceController.text) ?? 65;
-
-    teaTotal = (teaQuantityMl / 1000) * teaPricePerLiter;
-
-    // ----------------------------------------------------------
-    // PAN MASALA
-    // ----------------------------------------------------------
-
-    final double panMasalaCount =
-        double.tryParse(panMasalaCountController.text) ?? 0;
-
-    final double panMasalaPrice =
-        double.tryParse(panMasalaPriceController.text) ?? 0;
-
-    panMasalaTotal = panMasalaCount * panMasalaPrice;
-
-    // ----------------------------------------------------------
-    // SNACK
-    //
-    // One snack/dish per laborer.
-    // ----------------------------------------------------------
-
-    final double snackPrice = double.tryParse(snackPriceController.text) ?? 15;
-
-    snackTotal = laborCount * snackPrice;
-
-    // ----------------------------------------------------------
-    // GRAND TOTAL
-    // ----------------------------------------------------------
-
-    grandTotal = laborTotal + teaTotal + panMasalaTotal + snackTotal;
+    normalTotalExpense = normalLabourTotal + normalExtraTotal;
 
     setState(() {});
   }
 
-  // ============================================================
-  // SELECT DATE
-  // ============================================================
+  void calculateAgroExpense() {
+    // The farmer enters the total product amount directly.
+    agroProductTotal = _number(agroTotalAmountController);
+
+    agroLabourTotal =
+        _number(agroLabourNumberController) *
+        _number(agroLabourAmountController);
+
+    agroExtraTotal = _number(agroExtraAmountController);
+
+    agroTotalExpense =
+        agroProductTotal + agroLabourTotal + agroExtraTotal;
+
+    setState(() {});
+  }
 
   Future<void> selectDate() async {
-    final DateTime? picked = await showDatePicker(
+    final pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
 
-    if (picked != null) {
+    if (pickedDate != null && mounted) {
       setState(() {
-        selectedDate = picked;
+        selectedDate = pickedDate;
       });
     }
   }
 
-  // ============================================================
-  // FORMAT DATE
-  // ============================================================
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
+  }
 
-  String get formattedDate {
-    return '${selectedDate.day.toString().padLeft(2, '0')}/'
-        '${selectedDate.month.toString().padLeft(2, '0')}/'
-        '${selectedDate.year}';
+  bool _hasNegativeValues(List<double> values) {
+    return values.any((value) => value < 0);
   }
 
   // ============================================================
-  // ADD EXPENSE
+  // SAVE NORMAL EXPENSE TO BACKEND
+  // POST /api/farm_expense
   // ============================================================
 
-  void addExpense() {
-    // Calculate latest values first.
-    calculateExpenses();
+  Future<void> addNormalExpense() async {
+    if (isSavingExpense) return;
 
-    // ----------------------------------------------------------
-    // VALIDATE WORK TYPE
-    // ----------------------------------------------------------
+    final expenseName = expenseNameController.text.trim();
+    final labourNumber = _number(normalLabourNumberController);
+    final labourAmount = _number(normalLabourAmountController);
+    final extraAmount = _number(normalExtraAmountController);
 
-    if (selectedWorkType == null) {
-      showMessage('કામનો પ્રકાર પસંદ કરો');
+    if (expenseName.isEmpty) {
+      _showMessage('Please enter Expense Name', isError: true);
       return;
     }
 
-    // ----------------------------------------------------------
-    // VALIDATE LABOR COUNT
-    // ----------------------------------------------------------
-
-    final double laborCount = double.tryParse(laborCountController.text) ?? 0;
-
-    if (laborCount <= 0) {
-      showMessage('મજૂરોની સંખ્યા દાખલ કરો');
+    if (_hasNegativeValues([
+      labourNumber,
+      labourAmount,
+      extraAmount,
+    ])) {
+      _showMessage('Amounts cannot be negative', isError: true);
       return;
     }
 
-    // ----------------------------------------------------------
-    // VALIDATE LABOR AMOUNT
-    // ----------------------------------------------------------
+    final labourTotal = labourNumber * labourAmount;
+    final totalCost = labourTotal + extraAmount;
 
-    final double laborAmount = double.tryParse(laborAmountController.text) ?? 0;
-
-    if (laborAmount <= 0) {
-      showMessage('એક મજૂરની રકમ દાખલ કરો');
-      return;
-    }
-
-    // ==========================================================
-    // EXPENSE OBJECT
-    //
-    // Later this object can be sent to Spring Boot API.
-    // ==========================================================
-
-    final Map<String, dynamic> farmExpense = {
-      'regionId': null,
-      'regionName': widget.regionName,
-
+    final Map<String, dynamic> requestBody = {
       'farmId': widget.farmId,
-      'farmName': widget.farmName,
-
-      'cropType': widget.cropType,
-
-      'workType': selectedWorkType,
-
-      'laborCount': laborCount,
-      'laborAmount': laborAmount,
-      'laborTotal': laborTotal,
-
-      'teaQuantityMl': double.tryParse(teaQuantityController.text) ?? 0,
-
-      'teaPricePerLiter': double.tryParse(teaPriceController.text) ?? 65,
-
-      'teaTotal': teaTotal,
-
-      'panMasalaCount': double.tryParse(panMasalaCountController.text) ?? 0,
-
-      'panMasalaPrice': double.tryParse(panMasalaPriceController.text) ?? 0,
-
-      'panMasalaTotal': panMasalaTotal,
-
-      'snackPricePerPerson': double.tryParse(snackPriceController.text) ?? 15,
-
-      'snackTotal': snackTotal,
-
-      'totalAmount': grandTotal,
-
-      'date': selectedDate.toIso8601String(),
+      'expenseType': 'NORMAL',
+      'expenseName': expenseName,
+      'agroQuantity': null,
+      'totalAgroExpense': null,
+      'numberOfWorkers': labourNumber,
+      'pricePerWorker': labourAmount,
+      'totalExpenseOfWorkers': labourTotal,
+      'extraCost': extraAmount,
+      'expenseDate': apiDate,
+      'totalCost': totalCost,
     };
 
-    // ==========================================================
-    // TEMPORARY DEBUG
-    //
-    // Later replace this with API call.
-    // ==========================================================
+    setState(() => isSavingExpense = true);
 
-    debugPrint('====================================');
+    try {
+      final response = await ApiService.addFarmExpense(
+        body: requestBody,
+      );
 
-    debugPrint('FARM EXPENSE');
+      if (!mounted) return;
 
-    debugPrint(farmExpense.toString());
+      debugPrint('NORMAL EXPENSE SAVED: $response');
 
-    debugPrint('====================================');
+      _showMessage('Normal Expense saved successfully');
+      clearNormalForm();
+    } catch (error) {
+      if (!mounted) return;
 
-    // ==========================================================
-    // SUCCESS
-    // ==========================================================
+      debugPrint('NORMAL EXPENSE ERROR: $error');
+      _showMessage(
+        'Could not save normal expense: $error',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isSavingExpense = false);
+      }
+    }
+  }
 
-    showMessage('ખેતરનો ખર્ચ સફળતાપૂર્વક ઉમેરાયો');
+  // ============================================================
+  // SAVE AGRO EXPENSE TO BACKEND
+  // POST /api/farm_expense
+  // ============================================================
 
-    // ==========================================================
-    // CLEAR FORM
-    // ==========================================================
+  Future<void> addAgroExpense() async {
+    if (isSavingExpense) return;
+
+    final productName = agroProductNameController.text.trim();
+    final quantity = _number(agroQuantityController);
+    final productAmount = _number(agroTotalAmountController);
+    final labourNumber = _number(agroLabourNumberController);
+    final labourAmount = _number(agroLabourAmountController);
+    final extraAmount = _number(agroExtraAmountController);
+
+    if (productName.isEmpty) {
+      _showMessage('Please enter Agro Product Name', isError: true);
+      return;
+    }
+
+    if (quantity <= 0) {
+      _showMessage('Quantity must be greater than zero', isError: true);
+      return;
+    }
+
+    if (_hasNegativeValues([
+      productAmount,
+      labourNumber,
+      labourAmount,
+      extraAmount,
+    ])) {
+      _showMessage('Amounts cannot be negative', isError: true);
+      return;
+    }
+
+    // Product amount is the amount entered by the farmer.
+    final labourTotal = labourNumber * labourAmount;
+    final totalCost = productAmount + labourTotal + extraAmount;
+
+    final Map<String, dynamic> requestBody = {
+      'farmId': widget.farmId,
+      'expenseType': 'AGRO',
+      'expenseName': productName,
+      'agroQuantity': quantity,
+      'totalAgroExpense': productAmount,
+      'numberOfWorkers': labourNumber,
+      'pricePerWorker': labourAmount,
+      'totalExpenseOfWorkers': labourTotal,
+      'extraCost': extraAmount,
+      'expenseDate': apiDate,
+      'totalCost': totalCost,
+    };
 
     setState(() {
-      selectedWorkType = null;
+      agroProductTotal = productAmount;
+      agroLabourTotal = labourTotal;
+      agroExtraTotal = extraAmount;
+      agroTotalExpense = totalCost;
+      isSavingExpense = true;
+    });
 
-      laborCountController.clear();
-      laborAmountController.clear();
-      teaQuantityController.clear();
-      panMasalaCountController.clear();
-      panMasalaPriceController.clear();
+    try {
+      final response = await ApiService.addFarmExpense(
+        body: requestBody,
+      );
 
-      // Keep default prices.
-      teaPriceController.text = '65';
-      snackPriceController.text = '15';
+      if (!mounted) return;
 
-      laborTotal = 0;
-      teaTotal = 0;
-      panMasalaTotal = 0;
-      snackTotal = 0;
-      grandTotal = 0;
+      debugPrint('AGRO EXPENSE SAVED: $response');
+
+      _showMessage('Agro Expense saved successfully');
+      clearAgroForm();
+    } catch (error) {
+      if (!mounted) return;
+
+      debugPrint('AGRO EXPENSE ERROR: $error');
+      _showMessage(
+        'Could not save agro expense: $error',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isSavingExpense = false);
+      }
+    }
+  }
+
+  // Clear normal form after successful save
+  void clearNormalForm() {
+    expenseNameController.clear();
+    normalLabourNumberController.clear();
+    normalLabourAmountController.clear();
+    normalExtraAmountController.clear();
+
+    setState(() {
+      normalLabourTotal = 0;
+      normalExtraTotal = 0;
+      normalTotalExpense = 0;
+    });
+  }
+
+  // Clear agro form after successful save
+  void clearAgroForm() {
+    agroProductNameController.clear();
+    agroQuantityController.clear();
+    agroTotalAmountController.clear();
+    agroLabourNumberController.clear();
+    agroLabourAmountController.clear();
+    agroExtraAmountController.clear();
+
+    setState(() {
+      agroProductTotal = 0;
+      agroLabourTotal = 0;
+      agroExtraTotal = 0;
+      agroTotalExpense = 0;
     });
   }
 
   // ============================================================
-  // SHOW MESSAGE
+  // FARM INFORMATION
   // ============================================================
 
-  void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+  Widget _buildFarmInformation() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Farm Information',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text('Region: ${widget.regionName}'),
+          const SizedBox(height: 5),
+          Text('Farm: ${widget.farmName}'),
+          const SizedBox(height: 5),
+          Text('Crop: ${widget.cropType}'),
+          const SizedBox(height: 5),
+          Text('Farm ID: ${widget.farmId}'),
+        ],
+      ),
     );
   }
 
-  // ============================================================
-  // DISPOSE
-  // ============================================================
-
-  @override
-  void dispose() {
-    laborCountController.dispose();
-    laborAmountController.dispose();
-    teaQuantityController.dispose();
-    teaPriceController.dispose();
-    panMasalaCountController.dispose();
-    panMasalaPriceController.dispose();
-    snackPriceController.dispose();
-
-    super.dispose();
-  }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('ખેતરનો ખર્ચ'), centerTitle: true),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-
-            children: [
-              // ==================================================
-              // SELECTED FARM
-              // ==================================================
-              _buildSelectedFarmCard(),
-
-              const SizedBox(height: 22),
-
-              // ==================================================
-              // WORK TYPE
-              // ==================================================
-              const Text(
-                'કામનો પ્રકાર',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  Widget _buildTypeButton({
+    required String title,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: isSavingExpense ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? Colors.green.shade50 : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected
+                  ? Colors.green.shade400
+                  : Colors.grey.shade300,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                color: selected ? Colors.green.shade800 : Colors.black87,
               ),
-
-              const SizedBox(height: 8),
-
-              DropdownButtonFormField<String>(
-                initialValue: selectedWorkType,
-
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.agriculture_outlined),
-
-                  hintText: 'કામ પસંદ કરો',
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-
-                items: workTypes.map((String work) {
-                  return DropdownMenuItem<String>(
-                    value: work,
-                    child: Text(work),
-                  );
-                }).toList(),
-
-                onChanged: (String? value) {
-                  setState(() {
-                    selectedWorkType = value;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // ==================================================
-              // LABOR
-              // ==================================================
-              _buildSectionTitle('મજૂરીનો ખર્ચ', Icons.people_outline),
-
-              const SizedBox(height: 12),
-
-              _buildNumberField(
-                controller: laborCountController,
-                label: 'કેટલા મજૂર કામ કરે છે?',
-                hint: 'ઉદાહરણ: 8',
-                icon: Icons.people_outline,
-                decimal: false,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildNumberField(
-                controller: laborAmountController,
-                label: 'એક મજૂરની રકમ',
-                hint: 'ઉદાહરણ: ₹400',
-                icon: Icons.currency_rupee,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildCalculationRow(title: 'કુલ મજૂરી', amount: laborTotal),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // TEA
-              // ==================================================
-              _buildSectionTitle('ચાનો ખર્ચ', Icons.local_cafe_outlined),
-
-              const SizedBox(height: 12),
-
-              _buildNumberField(
-                controller: teaQuantityController,
-                label: 'ચા કેટલી લીધી? (મિલીલીટર)',
-                hint: 'ઉદાહરણ: 450',
-                icon: Icons.local_cafe_outlined,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildNumberField(
-                controller: teaPriceController,
-                label: 'ચાનો ભાવ (₹ પ્રતિ લીટર)',
-                hint: 'ઉદાહરણ: ₹65',
-                icon: Icons.currency_rupee,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildCalculationRow(title: 'કુલ ચાનો ખર્ચ', amount: teaTotal),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // PAN MASALA
-              // ==================================================
-              _buildSectionTitle(
-                'પાન મસાલાનો ખર્ચ',
-                Icons.shopping_bag_outlined,
-              ),
-
-              const SizedBox(height: 12),
-
-              _buildNumberField(
-                controller: panMasalaCountController,
-                label: 'કેટલી વસ્તુ લીધી?',
-                hint: 'ઉદાહરણ: 10',
-                icon: Icons.shopping_bag_outlined,
-                decimal: false,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildNumberField(
-                controller: panMasalaPriceController,
-                label: 'એક વસ્તુનો ભાવ',
-                hint: 'ઉદાહરણ: ₹5',
-                icon: Icons.currency_rupee,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildCalculationRow(
-                title: 'કુલ પાન મસાલાનો ખર્ચ',
-                amount: panMasalaTotal,
-              ),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // SNACK
-              // ==================================================
-              _buildSectionTitle('નાસ્તાનો ખર્ચ', Icons.restaurant_outlined),
-
-              const SizedBox(height: 12),
-
-              const Text(
-                'દરેક મજૂર માટે એક ડિશ ગણવામાં આવશે.',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-
-              const SizedBox(height: 12),
-
-              _buildNumberField(
-                controller: snackPriceController,
-                label: 'એક ડિશનો ભાવ',
-                hint: 'ઉદાહરણ: ₹15',
-                icon: Icons.currency_rupee,
-                onChanged: (_) {
-                  calculateExpenses();
-                },
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildCalculationRow(
-                title: 'કુલ નાસ્તાનો ખર્ચ',
-                amount: snackTotal,
-              ),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // DATE
-              // ==================================================
-              _buildSectionTitle('તારીખ', Icons.calendar_today_outlined),
-
-              const SizedBox(height: 10),
-
-              InkWell(
-                onTap: selectDate,
-
-                borderRadius: BorderRadius.circular(12),
-
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 16,
-                  ),
-
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined),
-
-                      const SizedBox(width: 12),
-
-                      Text(formattedDate, style: const TextStyle(fontSize: 16)),
-
-                      const Spacer(),
-
-                      const Icon(Icons.arrow_drop_down),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // TOTAL
-              // ==================================================
-              _buildGrandTotalCard(),
-
-              const SizedBox(height: 22),
-
-              // ==================================================
-              // ADD EXPENSE
-              // ==================================================
-              SizedBox(
-                height: 55,
-
-                child: ElevatedButton.icon(
-                  onPressed: addExpense,
-
-                  icon: const Icon(Icons.add),
-
-                  label: const Text(
-                    'ખર્ચ ઉમેરો',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                  ),
-
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ============================================================
-  // SELECTED FARM CARD
-  // ============================================================
-
-  Widget _buildSelectedFarmCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-
-        borderRadius: BorderRadius.circular(16),
-
-        border: Border.all(color: Colors.green.shade200),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    required ValueChanged<String> onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
+    );
+  }
 
+  Widget _buildImportantAgroField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    required ValueChanged<String> onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.green.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalculationRow({
+    required String title,
+    required double amount,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            '₹${amount.toStringAsFixed(2)}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(11),
-
-            decoration: BoxDecoration(
-              color: Colors.white,
-
-              borderRadius: BorderRadius.circular(12),
-            ),
-
-            child: Icon(
-              Icons.agriculture,
-              color: Colors.green.shade700,
-              size: 30,
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
+          const Icon(Icons.calendar_today, size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
                 const Text(
-                  'પસંદ કરેલ ખેતર',
+                  'Expense Date',
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
-
-                const SizedBox(height: 4),
-
+                const SizedBox(height: 3),
                 Text(
-                  widget.regionName,
+                  formattedDate,
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-
-                Text(
-                  widget.farmName,
-                  style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-
-                const SizedBox(height: 3),
-
-                Row(
-                  children: [
-                    Icon(
-                      Icons.grass_outlined,
-                      size: 16,
-                      color: Colors.green.shade700,
-                    ),
-
-                    const SizedBox(width: 5),
-
-                    Text(
-                      'ચાલુ પાક: ${widget.cropType}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.green.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // SECTION TITLE
-  // ============================================================
-
-  Widget _buildSectionTitle(String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.green.shade700),
-
-        const SizedBox(width: 8),
-
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // NUMBER FIELD
-  // ============================================================
-
-  Widget _buildNumberField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool decimal = true,
-    Function(String)? onChanged,
-  }) {
-    return TextField(
-      controller: controller,
-
-      keyboardType: decimal
-          ? const TextInputType.numberWithOptions(decimal: true)
-          : TextInputType.number,
-
-      onChanged: onChanged,
-
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-
-        prefixIcon: Icon(icon),
-
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-
-          borderSide: const BorderSide(color: Colors.grey),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-
-          borderSide: BorderSide(color: Colors.green.shade700, width: 2),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // CALCULATION ROW
-  // ============================================================
-
-  Widget _buildCalculationRow({required String title, required double amount}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-
-        borderRadius: BorderRadius.circular(10),
-      ),
-
-      child: Row(
-        children: [
-          Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-
-          const Spacer(),
-
-          Text(
-            '₹${amount.toStringAsFixed(2)}',
-
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          TextButton(
+            onPressed: isSavingExpense ? null : selectDate,
+            child: const Text('Change'),
           ),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // GRAND TOTAL CARD
-  // ============================================================
-
-  Widget _buildGrandTotalCard() {
+  Widget _buildGrandTotalCard({
+    required String title,
+    required double amount,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(20),
-
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.green.shade50,
-
-        borderRadius: BorderRadius.circular(16),
-
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.green.shade200),
       ),
-
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'આ ખેતરનો કુલ ખર્ચ',
-            style: TextStyle(fontSize: 15, color: Colors.grey),
-          ),
-
-          const SizedBox(height: 6),
-
           Text(
-            '₹${grandTotal.toStringAsFixed(2)}',
-
-            style: TextStyle(
-              fontSize: 30,
+            title,
+            style: const TextStyle(
+              fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: Colors.green.shade700,
             ),
           ),
+          Text(
+            '₹${amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 12),
+  Widget _buildAddButton({
+    required String title,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: isSavingExpense ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green.shade700,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: Colors.grey,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: isSavingExpense
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
+    );
+  }
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-            children: [
-              _buildSmallTotal('મજૂરી', laborTotal),
-
-              _buildSmallTotal('ચા', teaTotal),
-
-              _buildSmallTotal('પાન મસાલા', panMasalaTotal),
-
-              _buildSmallTotal('નાસ્તો', snackTotal),
-            ],
+  Widget _buildProductAmountCheck() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Total Product Amount',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          Text(
+            '₹${agroProductTotal.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
+            ),
           ),
         ],
       ),
@@ -915,22 +599,228 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
   }
 
   // ============================================================
-  // SMALL TOTAL
+  // NORMAL EXPENSE FORM
   // ============================================================
 
-  Widget _buildSmallTotal(String title, double amount) {
+  Widget _buildNormalExpenseForm() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-
-        const SizedBox(height: 3),
-
-        Text(
-          '₹${amount.toStringAsFixed(0)}',
-
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        const Text(
+          'Normal Expense',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 18),
+        _buildTextField(
+          controller: expenseNameController,
+          label: 'Expense Name',
+          onChanged: (_) {},
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: normalLabourNumberController,
+                label: 'Labour Number',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => calculateNormalExpense(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                controller: normalLabourAmountController,
+                label: 'Each Labour Amount',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => calculateNormalExpense(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildCalculationRow(
+          title: 'Total Labour Amount',
+          amount: normalLabourTotal,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: normalExtraAmountController,
+          label: 'Extra Amount',
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => calculateNormalExpense(),
+        ),
+        const SizedBox(height: 18),
+        _buildDateCard(),
+        const SizedBox(height: 12),
+        _buildGrandTotalCard(
+          title: 'Total Expense',
+          amount: normalTotalExpense,
+        ),
+        const SizedBox(height: 16),
+        _buildAddButton(
+          title: 'Add Expense',
+          onPressed: addNormalExpense,
         ),
       ],
+    );
+  }
+
+  // ============================================================
+  // AGRO EXPENSE FORM
+  // ============================================================
+
+  Widget _buildAgroExpenseForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Agro Expense',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 18),
+        _buildImportantAgroField(
+          controller: agroProductNameController,
+          label: 'Agro Product Name',
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 16),
+        _buildImportantAgroField(
+          controller: agroQuantityController,
+          label: 'Quantity',
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 16),
+        _buildImportantAgroField(
+          controller: agroTotalAmountController,
+          label: 'Total Amount',
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => calculateAgroExpense(),
+        ),
+        const SizedBox(height: 12),
+        _buildProductAmountCheck(),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: agroLabourNumberController,
+                label: 'Labour Number',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => calculateAgroExpense(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                controller: agroLabourAmountController,
+                label: 'Each Labour Amount',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => calculateAgroExpense(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildCalculationRow(
+          title: 'Total Labour Amount',
+          amount: agroLabourTotal,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: agroExtraAmountController,
+          label: 'Extra Expense Amount',
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => calculateAgroExpense(),
+        ),
+        const SizedBox(height: 18),
+        _buildDateCard(),
+        const SizedBox(height: 12),
+        _buildGrandTotalCard(
+          title: 'Total Expense',
+          amount: agroTotalExpense,
+        ),
+        const SizedBox(height: 16),
+        _buildAddButton(
+          title: 'Add Expense',
+          onPressed: addAgroExpense,
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    expenseNameController.dispose();
+    normalLabourNumberController.dispose();
+    normalLabourAmountController.dispose();
+    normalExtraAmountController.dispose();
+
+    agroProductNameController.dispose();
+    agroQuantityController.dispose();
+    agroTotalAmountController.dispose();
+    agroLabourNumberController.dispose();
+    agroLabourAmountController.dispose();
+    agroExtraAmountController.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Farm Expense'),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFarmInformation(),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  _buildTypeButton(
+                    title: 'Normal Expense',
+                    selected: selectedExpenseType == 'Normal Expense',
+                    onTap: () {
+                      setState(() {
+                        selectedExpenseType = 'Normal Expense';
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  _buildTypeButton(
+                    title: 'Agro Expense',
+                    selected: selectedExpenseType == 'Agro Expense',
+                    onTap: () {
+                      setState(() {
+                        selectedExpenseType = 'Agro Expense';
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (selectedExpenseType == 'Normal Expense')
+                _buildNormalExpenseForm()
+              else
+                _buildAgroExpenseForm(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

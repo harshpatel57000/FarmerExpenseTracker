@@ -1,533 +1,751 @@
+
 import 'package:flutter/material.dart';
+import 'services/api_service.dart'; // Adjust this path for your project.
 
 class AgroExpensePage extends StatefulWidget {
-  const AgroExpensePage({super.key});
+  final int userId;
+
+  const AgroExpensePage({
+    super.key,
+    required this.userId,
+  });
 
   @override
-  State<AgroExpensePage> createState() =>
-      _AgroExpensePageState();
+  State<AgroExpensePage> createState() => _AgroExpensePageState();
 }
 
-class _AgroExpensePageState
-    extends State<AgroExpensePage> {
-  // ============================================================
-  // CONTROLLERS
-  // ============================================================
+class _AgroExpensePageState extends State<AgroExpensePage> {
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController productNameController =
-      TextEditingController();
+  final productNameController = TextEditingController();
+  final quantityController = TextEditingController();
+  final measurementController = TextEditingController();
+  final priceController = TextEditingController();
 
-  final TextEditingController bagWeightController =
-      TextEditingController();
+  final List<String> units = const [
+    'BAG',
+    'KG',
+    'LITER',
+    'BOTTLE',
+    'PACKET',
+    'DRUM',
+    'PIECE',
+  ];
 
-  final TextEditingController quantityController =
-      TextEditingController();
-
-  final TextEditingController pricePerBagController =
-      TextEditingController();
-
-  final TextEditingController totalWeightController =
-      TextEditingController();
-
-  // ============================================================
-  // VALUES
-  // ============================================================
-
-  String selectedUnit = 'બેગ';
-
+  String quantityUnit = 'BAG';
+  String measurementUnit = 'KG';
   DateTime selectedDate = DateTime.now();
 
+  double totalWeight = 0;
   double totalAmount = 0;
 
-  // ============================================================
-  // CALCULATE
-  //
-  // Example:
-  //
-  // Urea
-  // 1 bag = 45 kg
-  // 3 bags
-  // ₹300 / bag
-  //
-  // Total = 3 × ₹300 = ₹900
-  // Weight = 3 × 45 = 135 kg
-  // ============================================================
+  bool isSaving = false;
+  bool isLoading = false;
 
-  void calculateTotal() {
-    final double quantity =
-        double.tryParse(
-              quantityController.text,
-            ) ??
-            0;
+  List<Map<String, dynamic>> expenses = [];
 
-    final double price =
-        double.tryParse(
-              pricePerBagController.text,
-            ) ??
-            0;
+  @override
+  void initState() {
+    super.initState();
+    loadExpenses();
+  }
 
+  @override
+  void dispose() {
+    productNameController.dispose();
+    quantityController.dispose();
+    measurementController.dispose();
+    priceController.dispose();
+    super.dispose();
+  }
+
+  double get quantity =>
+      double.tryParse(quantityController.text.trim()) ?? 0;
+
+  double get measurement =>
+      double.tryParse(measurementController.text.trim()) ?? 0;
+
+  double get price =>
+      double.tryParse(priceController.text.trim()) ?? 0;
+
+  void calculateTotals() {
     setState(() {
+      totalWeight = quantity * measurement;
       totalAmount = quantity * price;
     });
   }
 
-  // ============================================================
-  // DATE
-  // ============================================================
+  String formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
 
-  Future<void> selectDate() async {
-    final DateTime? picked =
-        await showDatePicker(
+  void showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> selectPurchaseDate() async {
+    final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
+      setState(() => selectedDate = picked);
+    }
+  }
+
+  // GET /api/agro
+  Future<void> loadExpenses() async {
+    setState(() => isLoading = true);
+
+    try {
+      final result = await ApiService.getAgroExpenses();
+
+      if (!mounted) return;
+
       setState(() {
-        selectedDate = picked;
+        // Filter locally because the current GET endpoint returns all records.
+        expenses = result
+            .where((item) =>
+                item is Map &&
+                item['userId']?.toString() == widget.userId.toString())
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
       });
+    } catch (e) {
+      showMessage('ખર્ચ લોડ કરવામાં ભૂલ: $e');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  String get formattedDate {
-    return '${selectedDate.day.toString().padLeft(2, '0')}/'
-        '${selectedDate.month.toString().padLeft(2, '0')}/'
-        '${selectedDate.year}';
-  }
+  // POST /api/agro
+  Future<void> addAgroExpense() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  // ============================================================
-  // ADD AGRO EXPENSE
-  // ============================================================
+    setState(() => isSaving = true);
 
-  void addAgroExpense() {
-    final String productName =
-        productNameController.text.trim();
-
-    final double bagWeight =
-        double.tryParse(
-              bagWeightController.text,
-            ) ??
-            0;
-
-    final double quantity =
-        double.tryParse(
-              quantityController.text,
-            ) ??
-            0;
-
-    final double price =
-        double.tryParse(
-              pricePerBagController.text,
-            ) ??
-            0;
-
-    // ----------------------------------------------------------
-    // VALIDATION
-    // ----------------------------------------------------------
-
-    if (productName.isEmpty) {
-      showMessage(
-        'કૃષિ ઉત્પાદનનું નામ દાખલ કરો',
-      );
-      return;
-    }
-
-    if (bagWeight <= 0) {
-      showMessage(
-        'એક બેગમાં કેટલું વજન છે તે દાખલ કરો',
-      );
-      return;
-    }
-
-    if (quantity <= 0) {
-      showMessage(
-        'કેટલી બેગ ખરીદી તે દાખલ કરો',
-      );
-      return;
-    }
-
-    if (price <= 0) {
-      showMessage(
-        'એક બેગનો ભાવ દાખલ કરો',
-      );
-      return;
-    }
-
-    // ----------------------------------------------------------
-    // TOTAL WEIGHT
-    // ----------------------------------------------------------
-
-    final double totalWeight =
-        bagWeight * quantity;
-
-    // ----------------------------------------------------------
-    // TOTAL AMOUNT
-    // ----------------------------------------------------------
-
-    final double amount =
-        quantity * price;
-
-    // ----------------------------------------------------------
-    // DATA
-    //
-    // Later this will go to Spring Boot API.
-    // ----------------------------------------------------------
-
-    final Map<String, dynamic>
-        agroExpense = {
-      'productName': productName,
-
-      'weightPerBag': bagWeight,
-
-      'quantity': quantity,
-
-      'totalWeight': totalWeight,
-
-      'pricePerBag': price,
-
-      'totalAmount': amount,
-
-      'unit': selectedUnit,
-
-      'date':
-          selectedDate.toIso8601String(),
-
-      // Inventory quantity.
-      //
-      // Initially everything is available.
-      'remainingWeight': totalWeight,
-
-      'usedWeight': 0.0,
+    final body = <String, dynamic>{
+      'userId': widget.userId,
+      'productName': productNameController.text.trim(),
+      'quantity': {
+        'value': quantity,
+        'unit': quantityUnit,
+      },
+      'measurement': {
+        'value': measurement,
+        'unit': measurementUnit,
+      },
+      'pricePerUnit': price,
+      'totalWeight': {
+        'value': totalWeight,
+        'unit': measurementUnit,
+      },
+      'totalAmount': totalAmount,
+      'purchaseDate':
+          '${selectedDate.year.toString().padLeft(4, '0')}-'
+          '${selectedDate.month.toString().padLeft(2, '0')}-'
+          '${selectedDate.day.toString().padLeft(2, '0')}',
     };
 
-    debugPrint(
-      'Agro Expense: $agroExpense',
-    );
+    try {
+      await ApiService.addAgroExpense(body: body);
 
-    showMessage(
-      'કૃષિ ઉત્પાદનનો ખર્ચ ઉમેરાયો',
-    );
+      if (!mounted) return;
 
-    // ----------------------------------------------------------
-    // CLEAR FORM
-    // ----------------------------------------------------------
+      productNameController.clear();
+      quantityController.clear();
+      measurementController.clear();
+      priceController.clear();
 
-    productNameController.clear();
-    bagWeightController.clear();
-    quantityController.clear();
-    pricePerBagController.clear();
+      setState(() {
+        totalWeight = 0;
+        totalAmount = 0;
+        quantityUnit = 'BAG';
+        measurementUnit = 'KG';
+        selectedDate = DateTime.now();
+      });
 
-    setState(() {
-      totalAmount = 0;
-    });
+      showMessage('કૃષિ ઉત્પાદનનો ખર્ચ સફળતાપૂર્વક ઉમેરાયો');
+      await loadExpenses();
+    } catch (e) {
+      showMessage('ખર્ચ ઉમેરવામાં ભૂલ: $e');
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
   }
 
-  // ============================================================
-  // MESSAGE
-  // ============================================================
+  // PUT /api/agro/{id}
+  Future<void> editExpense(Map<String, dynamic> expense) async {
+    final id = int.tryParse('${expense['id']}');
 
-  void showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior:
-            SnackBarBehavior.floating,
-      ),
+    if (id == null) {
+      showMessage('ખર્ચની ID મળી નથી. AgroMapper તપાસો.');
+      return;
+    }
+
+    final nameController = TextEditingController(
+      text: '${expense['productName'] ?? ''}',
     );
-  }
+    final qtyController = TextEditingController(
+      text: '${expense['quantity']?['value'] ?? ''}',
+    );
+    final measurementValueController = TextEditingController(
+      text: '${expense['measurement']?['value'] ?? ''}',
+    );
+    final priceValueController = TextEditingController(
+      text: '${expense['pricePerUnit'] ?? ''}',
+    );
 
-  // ============================================================
-  // DISPOSE
-  // ============================================================
+    String editQuantityUnit =
+        '${expense['quantity']?['unit'] ?? 'BAG'}';
+    String editMeasurementUnit =
+        '${expense['measurement']?['unit'] ?? 'KG'}';
 
-  @override
-  void dispose() {
-    productNameController.dispose();
-    bagWeightController.dispose();
-    quantityController.dispose();
-    pricePerBagController.dispose();
-    totalWeightController.dispose();
+    DateTime editDate = DateTime.tryParse(
+          '${expense['purchaseDate'] ?? ''}',
+        ) ??
+        DateTime.now();
 
-    super.dispose();
-  }
+    final editFormKey = GlobalKey<FormState>();
 
-  // ============================================================
-  // BUILD
-  // ============================================================
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'કૃષિ ઉત્પાદન ખર્ચ',
-        ),
-        centerTitle: true,
-      ),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(20),
-
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.stretch,
-
-            children: [
-
-              // ==================================================
-              // HEADER
-              // ==================================================
-
-              const Text(
-                'કૃષિ ઉત્પાદન ખરીદી',
-                style: TextStyle(
-                  fontSize: 25,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              const Text(
-                'ખાતર, દવા અને અન્ય કૃષિ વસ્તુઓની ખરીદીનો ખર્ચ ઉમેરો.',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // ==================================================
-              // PRODUCT NAME
-              // ==================================================
-
-              _buildTextField(
-                controller:
-                    productNameController,
-
-                label:
-                    'કૃષિ ઉત્પાદનનું નામ',
-
-                hint:
-                    'ઉદાહરણ: યુરિયા',
-
-                icon:
-                    Icons.inventory_2_outlined,
-              ),
-
-              const SizedBox(height: 16),
-
-              // ==================================================
-              // WEIGHT PER BAG
-              // ==================================================
-
-              _buildNumberField(
-                controller:
-                    bagWeightController,
-
-                label:
-                    'એક બેગનું વજન (કિલો)',
-
-                hint:
-                    'ઉદાહરણ: 45',
-
-                icon:
-                    Icons.scale_outlined,
-              ),
-
-              const SizedBox(height: 16),
-
-              // ==================================================
-              // QUANTITY
-              // ==================================================
-
-              _buildNumberField(
-                controller:
-                    quantityController,
-
-                label:
-                    'કેટલી બેગ ખરીદી?',
-
-                hint:
-                    'ઉદાહરણ: 3',
-
-                icon:
-                    Icons.shopping_bag_outlined,
-
-                decimal: false,
-
-                onChanged: (_) {
-                  calculateTotal();
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // ==================================================
-              // PRICE PER BAG
-              // ==================================================
-
-              _buildNumberField(
-                controller:
-                    pricePerBagController,
-
-                label:
-                    'એક બેગનો ભાવ',
-
-                hint:
-                    'ઉદાહરણ: ₹300',
-
-                icon:
-                    Icons.currency_rupee,
-
-                onChanged: (_) {
-                  calculateTotal();
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // ==================================================
-              // TOTAL WEIGHT CARD
-              // ==================================================
-
-              _buildWeightCard(),
-
-              const SizedBox(height: 15),
-
-              // ==================================================
-              // TOTAL AMOUNT CARD
-              // ==================================================
-
-              _buildAmountCard(),
-
-              const SizedBox(height: 20),
-
-              // ==================================================
-              // DATE
-              // ==================================================
-
-              const Text(
-                'ખરીદીની તારીખ',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight:
-                      FontWeight.w600,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              InkWell(
-                onTap: selectDate,
-
-                borderRadius:
-                    BorderRadius.circular(
-                  12,
-                ),
-
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 16,
-                  ),
-
-                  decoration:
-                      BoxDecoration(
-                    border:
-                        Border.all(
-                      color:
-                          Colors.grey,
-                    ),
-
-                    borderRadius:
-                        BorderRadius.circular(
-                      12,
-                    ),
-                  ),
-
-                  child: Row(
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('ખર્ચમાં ફેરફાર કરો'),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: editFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-
-                      const Icon(
-                        Icons
-                            .calendar_today_outlined,
-                      ),
-
-                      const SizedBox(
-                        width: 12,
-                      ),
-
-                      Text(
-                        formattedDate,
-
-                        style:
-                            const TextStyle(
-                          fontSize: 16,
+                      TextFormField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'ઉત્પાદનનું નામ',
                         ),
+                        validator: requiredText,
                       ),
+                      TextFormField(
+                        controller: qtyController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'જથ્થો',
+                        ),
+                        validator: positiveNumber,
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: editQuantityUnit,
+                        decoration: const InputDecoration(
+                          labelText: 'જથ્થાનો એકમ',
+                        ),
+                        items: units
+                            .map((unit) => DropdownMenuItem(
+                                  value: unit,
+                                  child: Text(unit),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(
+                                () => editQuantityUnit = value);
+                          }
+                        },
+                      ),
+                      TextFormField(
+                        controller: measurementValueController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'એક બેગ/વસ્તુનું માપ',
+                        ),
+                        validator: positiveNumber,
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: editMeasurementUnit,
+                        decoration: const InputDecoration(
+                          labelText: 'માપનો એકમ',
+                        ),
+                        items: units
+                            .map((unit) => DropdownMenuItem(
+                                  value: unit,
+                                  child: Text(unit),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(
+                                () => editMeasurementUnit = value);
+                          }
+                        },
+                      ),
+                      TextFormField(
+                        controller: priceValueController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'એકમનો ભાવ (₹)',
+                        ),
+                        validator: positiveNumber,
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: dialogContext,
+                            initialDate: editDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
 
-                      const Spacer(),
-
-                      const Icon(
-                        Icons
-                            .arrow_drop_down,
+                          if (picked != null) {
+                            setDialogState(() => editDate = picked);
+                          }
+                        },
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(formatDate(editDate)),
                       ),
                     ],
                   ),
                 ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('રદ કરો'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (!editFormKey.currentState!.validate()) return;
 
-              const SizedBox(height: 30),
+                    final qty = double.parse(qtyController.text.trim());
+                    final measure = double.parse(
+                        measurementValueController.text.trim());
+                    final unitPrice =
+                        double.parse(priceValueController.text.trim());
 
-              // ==================================================
-              // ADD BUTTON
-              // ==================================================
+                    final body = <String, dynamic>{
+                      'userId': widget.userId,
+                      'productName': nameController.text.trim(),
+                      'quantity': {
+                        'value': qty,
+                        'unit': editQuantityUnit,
+                      },
+                      'measurement': {
+                        'value': measure,
+                        'unit': editMeasurementUnit,
+                      },
+                      'pricePerUnit': unitPrice,
+                      'totalWeight': {
+                        'value': qty * measure,
+                        'unit': editMeasurementUnit,
+                      },
+                      'totalAmount': qty * unitPrice,
+                      'purchaseDate':
+                          '${editDate.year.toString().padLeft(4, '0')}-'
+                          '${editDate.month.toString().padLeft(2, '0')}-'
+                          '${editDate.day.toString().padLeft(2, '0')}',
+                    };
 
-              SizedBox(
-                height: 54,
+                    Navigator.pop(dialogContext);
 
-                child:
-                    ElevatedButton.icon(
-                  onPressed:
-                      addAgroExpense,
+                    try {
+                      await ApiService.updateAgroExpense(
+                        id,
+                        body: body,
+                      );
 
-                  icon:
-                      const Icon(
-                    Icons.add,
-                  ),
+                      showMessage('ખર્ચ અપડેટ થયો');
+                      await loadExpenses();
+                    } catch (e) {
+                      showMessage('અપડેટ કરવામાં ભૂલ: $e');
+                    }
+                  },
+                  child: const Text('સેવ કરો'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
 
-                  label:
-                      const Text(
-                    'ખર્ચ ઉમેરો',
-                    style:
-                        TextStyle(
+    nameController.dispose();
+    qtyController.dispose();
+    measurementValueController.dispose();
+    priceValueController.dispose();
+  }
+
+  // DELETE /api/agro/{id}
+  Future<void> deleteExpense(Map<String, dynamic> expense) async {
+    final id = int.tryParse('${expense['id']}');
+
+    if (id == null) {
+      showMessage('ખર્ચની ID મળી નથી. AgroMapper તપાસો.');
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ખર્ચ કાઢી નાખવો છે?'),
+        content: Text('${expense['productName'] ?? ''} કાઢી નાખશો?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ના'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('હા, કાઢી નાખો'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ApiService.deleteAgroExpense(id);
+      showMessage('ખર્ચ કાઢી નાખ્યો');
+      await loadExpenses();
+    } catch (e) {
+      showMessage('ખર્ચ કાઢી નાખવામાં ભૂલ: $e');
+    }
+  }
+
+  String? requiredText(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'આ માહિતી દાખલ કરો';
+    }
+    return null;
+  }
+
+  String? positiveNumber(String? value) {
+    final number = double.tryParse(value?.trim() ?? '');
+
+    if (number == null || number <= 0) {
+      return 'શૂન્ય કરતાં વધુ સંખ્યા દાખલ કરો';
+    }
+
+    return null;
+  }
+
+  Widget buildNumberField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(
+        decimal: true,
+      ),
+      onChanged: (_) => calculateTotals(),
+      validator: positiveNumber,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget buildExpenseCard(Map<String, dynamic> expense) {
+    final id = expense['id'];
+    final quantity = expense['quantity'];
+    final measurement = expense['measurement'];
+    final weight = expense['totalWeight'];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.inventory_2_outlined,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${expense['productName'] ?? 'ઉત્પાદન'}',
+                    style: const TextStyle(
                       fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  style:
-                      ElevatedButton.styleFrom(
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        12,
-                      ),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
+                IconButton(
+                  tooltip: 'ફેરફાર કરો',
+                  onPressed: () => editExpense(expense),
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+                IconButton(
+                  tooltip: 'કાઢી નાખો',
+                  onPressed: () => deleteExpense(expense),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              'જથ્થો: ${quantity?['value'] ?? '-'} '
+              '${quantity?['unit'] ?? ''}',
+            ),
+            Text(
+              'માપ: ${measurement?['value'] ?? '-'} '
+              '${measurement?['unit'] ?? ''}',
+            ),
+            Text(
+              'કુલ વજન: ${weight?['value'] ?? '-'} '
+              '${weight?['unit'] ?? ''}',
+            ),
+            Text(
+              'તારીખ: ${expense['purchaseDate'] ?? '-'}',
+            ),
+            const Divider(),
+            Text(
+              'કુલ ખર્ચ: ₹${expense['totalAmount'] ?? 0}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
               ),
+            ),
+            if (id != null)
+              Text(
+                'ID: $id',
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('કૃષિ ઉત્પાદન ખર્ચ'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: loadExpenses,
+            tooltip: 'રીફ્રેશ',
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: loadExpenses,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              const Text(
+                'કૃષિ ઉત્પાદન ખરીદી',
+                style: TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'ખાતર, દવા અને અન્ય કૃષિ વસ્તુઓની ખરીદીનો ખર્ચ ઉમેરો.',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: productNameController,
+                      validator: requiredText,
+                      decoration: InputDecoration(
+                        labelText: 'કૃષિ ઉત્પાદનનું નામ',
+                        hintText: 'ઉદાહરણ: યુરિયા',
+                        prefixIcon:
+                            const Icon(Icons.inventory_2_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    buildNumberField(
+                      controller: quantityController,
+                      label: 'કેટલો જથ્થો ખરીદ્યો?',
+                      icon: Icons.shopping_bag_outlined,
+                    ),
+                    const SizedBox(height: 10),
+
+                    DropdownButtonFormField<String>(
+                      value: quantityUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'જથ્થાનો એકમ',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: units
+                          .map((unit) => DropdownMenuItem(
+                                value: unit,
+                                child: Text(unit),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => quantityUnit = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    buildNumberField(
+                      controller: measurementController,
+                      label: 'એક બેગ/વસ્તુનું માપ',
+                      icon: Icons.scale_outlined,
+                    ),
+                    const SizedBox(height: 10),
+
+                    DropdownButtonFormField<String>(
+                      value: measurementUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'માપનો એકમ',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: units
+                          .map((unit) => DropdownMenuItem(
+                                value: unit,
+                                child: Text(unit),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => measurementUnit = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    buildNumberField(
+                      controller: priceController,
+                      label: 'એકમનો ભાવ (₹)',
+                      icon: Icons.currency_rupee,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              _summaryCard(
+                'કુલ વજન',
+                '${totalWeight.toStringAsFixed(2)} $measurementUnit',
+                Icons.scale_outlined,
+              ),
+              const SizedBox(height: 12),
+              _summaryCard(
+                'કુલ ખરીદી ખર્ચ',
+                '₹${totalAmount.toStringAsFixed(2)}',
+                Icons.currency_rupee,
+              ),
+
+              const SizedBox(height: 20),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today_outlined),
+                title: const Text('ખરીદીની તારીખ'),
+                subtitle: Text(formatDate(selectedDate)),
+                trailing: const Icon(Icons.arrow_drop_down),
+                onTap: selectPurchaseDate,
+              ),
+
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: isSaving ? null : addAgroExpense,
+                  icon: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.add),
+                  label: Text(
+                    isSaving ? 'સેવ થઈ રહ્યું છે...' : 'ખર્ચ ઉમેરો',
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'સેવ કરેલા ખર્ચ',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text('${expenses.length}'),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (expenses.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'હજુ કોઈ ખર્ચ ઉમેર્યો નથી.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                ...expenses.map(buildExpenseCard),
             ],
           ),
         ),
@@ -535,332 +753,29 @@ class _AgroExpensePageState
     );
   }
 
-  // ============================================================
-  // TOTAL WEIGHT CARD
-  // ============================================================
-
-  Widget _buildWeightCard() {
-    final double bagWeight =
-        double.tryParse(
-              bagWeightController.text,
-            ) ??
-            0;
-
-    final double quantity =
-        double.tryParse(
-              quantityController.text,
-            ) ??
-            0;
-
-    final double totalWeight =
-        bagWeight * quantity;
-
+  Widget _summaryCard(String title, String value, IconData icon) {
     return Container(
-      padding:
-          const EdgeInsets.all(18),
-
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          14,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.green.withValues(alpha: 0.08),
+        border: Border.all(
+          color: Colors.green.withValues(alpha: 0.2),
         ),
-
-        color: Colors.blue
-            .withValues(
-          alpha: 0.08,
-        ),
-
-        border:
-            Border.all(
-          color: Colors.blue
-              .withValues(
-            alpha: 0.2,
-          ),
-        ),
+        borderRadius: BorderRadius.circular(14),
       ),
-
       child: Row(
         children: [
-
-          Container(
-            padding:
-                const EdgeInsets.all(
-              10,
-            ),
-
-            decoration:
-                BoxDecoration(
-              borderRadius:
-                  BorderRadius.circular(
-                10,
-              ),
-
-              color: Colors.blue
-                  .withValues(
-                alpha: 0.12,
-              ),
-            ),
-
-            child:
-                const Icon(
-              Icons.scale_outlined,
-            ),
-          ),
-
-          const SizedBox(
-            width: 12,
-          ),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
-              children: [
-
-                const Text(
-                  'કુલ વજન',
-                  style:
-                      TextStyle(
-                    color:
-                        Colors.grey,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 3,
-                ),
-
-                Text(
-                  '${totalWeight.toStringAsFixed(2)} કિલો',
-
-                  style:
-                      const TextStyle(
-                    fontSize: 22,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-              ],
+          Icon(icon, color: Colors.green.shade700),
+          const SizedBox(width: 12),
+          Expanded(child: Text(title)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // TOTAL AMOUNT CARD
-  // ============================================================
-
-  Widget _buildAmountCard() {
-    return Container(
-      padding:
-          const EdgeInsets.all(18),
-
-      decoration:
-          BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(
-          14,
-        ),
-
-        color: Colors.green
-            .withValues(
-          alpha: 0.08,
-        ),
-
-        border:
-            Border.all(
-          color: Colors.green
-              .withValues(
-            alpha: 0.2,
-          ),
-        ),
-      ),
-
-      child: Row(
-        children: [
-
-          Container(
-            padding:
-                const EdgeInsets.all(
-              10,
-            ),
-
-            decoration:
-                BoxDecoration(
-              borderRadius:
-                  BorderRadius.circular(
-                10,
-              ),
-
-              color: Colors.green
-                  .withValues(
-                alpha: 0.12,
-              ),
-            ),
-
-            child:
-                const Icon(
-              Icons.currency_rupee,
-            ),
-          ),
-
-          const SizedBox(
-            width: 12,
-          ),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
-              children: [
-
-                const Text(
-                  'કુલ ખરીદી ખર્ચ',
-                  style:
-                      TextStyle(
-                    color:
-                        Colors.grey,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 3,
-                ),
-
-                Text(
-                  '₹${totalAmount.toStringAsFixed(2)}',
-
-                  style:
-                      const TextStyle(
-                    fontSize: 22,
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // TEXT FIELD
-  // ============================================================
-
-  Widget _buildTextField({
-    required TextEditingController
-        controller,
-
-    required String label,
-
-    required String hint,
-
-    required IconData icon,
-  }) {
-    return TextField(
-      controller: controller,
-
-      decoration:
-          InputDecoration(
-        labelText: label,
-        hintText: hint,
-
-        prefixIcon:
-            Icon(icon),
-
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
-          ),
-        ),
-
-        focusedBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
-          ),
-
-          borderSide:
-              BorderSide(
-            color:
-                Colors.green.shade700,
-            width: 2,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // NUMBER FIELD
-  // ============================================================
-
-  Widget _buildNumberField({
-    required TextEditingController
-        controller,
-
-    required String label,
-
-    required String hint,
-
-    required IconData icon,
-
-    bool decimal = true,
-
-    Function(String)? onChanged,
-  }) {
-    return TextField(
-      controller: controller,
-
-      keyboardType: decimal
-          ? const TextInputType
-              .numberWithOptions(
-              decimal: true,
-            )
-          : TextInputType.number,
-
-      onChanged: onChanged,
-
-      decoration:
-          InputDecoration(
-        labelText: label,
-        hintText: hint,
-
-        prefixIcon:
-            Icon(icon),
-
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
-          ),
-        ),
-
-        focusedBorder:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            12,
-          ),
-
-          borderSide:
-              BorderSide(
-            color:
-                Colors.green.shade700,
-            width: 2,
-          ),
-        ),
       ),
     );
   }

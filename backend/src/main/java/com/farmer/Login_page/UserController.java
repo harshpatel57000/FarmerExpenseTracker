@@ -33,9 +33,9 @@ public class UserController {
     
 
     @PostMapping("/signup")
-    public signupResponse signUp(@Valid @RequestBody signupRequest sign){
-       User user= userService.signUp(sign);
-        return new signupResponse(user);
+    public ResponseEntity<String> signUp(@Valid @RequestBody signupRequest sign){
+        userService.signUp(sign);
+        return ResponseEntity.ok("User signed up successfully");
     }
 
 
@@ -46,10 +46,15 @@ public class UserController {
         return ResponseEntity.ok("OTP sent successfully");
     }
 
-    @PostMapping("/verifyOtp")
-    public loginResponse verifyOtp(@Valid @RequestBody verifyOTP request){
-        return userService.verifyOTP(request);
+    @PostMapping("/verifyLoginOtp")
+    public loginResponse verifyLoginOtp(@Valid @RequestBody verifyOTP request){
+        return userService.verifyLoginOtp(request);
     }
 
 
+    @PostMapping("/verifySignupOtp")
+    public ResponseEntity<loginResponse> verifySignupOtp(@Valid @RequestBody verifyOTP request){
+        loginResponse response = userService.verifySignupOtp(request);
+        return ResponseEntity.ok(response);
+    }
 }

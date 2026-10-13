@@ -8,16 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.farmer.Login_page.UserDTO.loginRequestPW;
+import com.farmer.Login_page.UserDTO.*;
 import com.farmer.Login_page.OTP.*;
-import com.farmer.Login_page.UserDTO.loginResponse;
-import com.farmer.Login_page.UserDTO.signupRequest;
+
 import com.farmer.Login_page.jwt_token.JwtService;
+
 import com.farmer.exception.ErrorException;
 
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 @Service
 public class UserService {
     
@@ -26,10 +27,8 @@ public class UserService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
-
-    //SIGNUP USER//
-    public User signUp(signupRequest sign){
-        User user=new User();
+    //----------------------SIGNUP USER----------------------------//
+    public void signUp(signupRequest sign){
 
         if(userRepository.findByEmailId(sign.getEmailId()).isPresent()){
 
@@ -39,17 +38,56 @@ public class UserService {
         if(userRepository.findByPhoneNumber(sign.getPhoneNumber()).isPresent()){
             throw new ErrorException("PhoneNumber Already Exit");
         }
-        
-        user.setUserName(sign.getUserName());
-        user.setEmailId(sign.getEmailId());
-        user.setPhoneNumber(sign.getPhoneNumber());
-        user.setPassword(passwordEncoder.encode(sign.getPassword()));
-        return userRepository.save(user);
+
+        String otp=generateOtp();
+
+        String passwordHash=passwordEncoder.encode(sign.getPassword());
+
+        long expiryTime =System.currentTimeMillis()+(10 * 60* 1000);
+
+
+        otpStore.put(sign.getEmailId(),new otpData(otp,expiryTime,sign.getUserName(),sign.getEmailId(),sign.getPhoneNumber(),passwordHash));
+
+        emailService.sendOtp(sign.getEmailId(),otp);
 
     }
 
+    //----------------------VERIFY SIGNUP OTP----------------------------//
 
-    //CHECK PASSWORD
+    public loginResponse verifySignupOtp(verifyOTP request){
+
+        otpData data=otpStore.get(request.getEmailId());
+
+        if(data == null){
+            throw new ErrorException("Signup OTP not found!",HttpStatus.UNAUTHORIZED);
+        }
+
+        if(System.currentTimeMillis() > data.getExpiryTime()){
+            otpStore.remove(request.getEmailId());
+            throw new ErrorException("OTP expired!",HttpStatus.UNAUTHORIZED);
+        }
+
+        if(!data.getOtp().equals(request.getOtp())){
+            throw new ErrorException("Invalid OTP!",HttpStatus.UNAUTHORIZED);
+        }
+        User user = new User();
+
+        user.setUserName(data.getUserName());
+        user.setEmailId(data.getEmailId());
+        user.setPhoneNumber(data.getPhoneNumber());
+        user.setPassword(data.getPasswordHash());
+
+        User savedUser =userRepository.save(user);
+
+        String token =jwtService.generateToken(savedUser.getId(),savedUser.getEmailId());
+
+        return new loginResponse(savedUser.getId(),savedUser.getUserName()
+        ,savedUser.getEmailId(),savedUser.getPhoneNumber(),token);
+
+
+    }
+
+    //----------------------CHECK PASSWORD----------------------------//
 
 
     public boolean checkPassword(String rawPassword,String storedPassword){
@@ -59,7 +97,7 @@ public class UserService {
 
 
 
-    //LOGIN USER - THROUGH PASSWORD//
+    //----------------------LOGIN USER - THROUGH PASSWORD----------------------//
     public loginResponse login(loginRequestPW request){
 
         User user;
@@ -96,11 +134,15 @@ public class UserService {
 
 
 
-    //OTP SECTORE [LOGIN THROUGH OTP]
+    //----------------------OTP SECTORE [LOGIN THROUGH OTP]----------------------//
     
     private final Map<String,otpData> otpStore=new ConcurrentHashMap<>();
 
-    //------------------------------------------------------------------//
+        
+
+    
+    
+    //-----------------------------REQUEST OTP--------------------------------//
     public void requestOTP(loginRequestOTP request){
         User user=userRepository.findByEmailId(request.getEmailId()).orElseThrow(()->new ErrorException("user not found!",HttpStatus.NOT_FOUND));
 
@@ -108,14 +150,7 @@ public class UserService {
 
         long expiryTime =System.currentTimeMillis()+(10 * 60* 1000);
 
-otpStore.put(request.getEmailId(),new otpData(otp, expiryTime));
-
-    System.out.println("================================");
-    System.out.println("GENERATED OTP = " + otp);
-    System.out.println("STORED OTP = " +
-        otpStore.get(request.getEmailId()).getOtp());
-    System.out.println("MAP SIZE = " + otpStore.size());
-    System.out.println("================================");
+        otpStore.put(request.getEmailId(),new otpData(otp, expiryTime));
 
         emailService.sendOtp(request.getEmailId(),otp);
     }
@@ -128,21 +163,13 @@ otpStore.put(request.getEmailId(),new otpData(otp, expiryTime));
     }
 
 
-    //-----------------------------------------------------------------//
-     public loginResponse verifyOTP(verifyOTP request){
+    //-----------------------------VERIFY OTP--------------------------------//
+     public loginResponse verifyLoginOtp(verifyOTP request){
 
-    System.out.println("================================");
-System.out.println("VERIFY EMAIL = " + request.getEmailId());
+    
+    otpData data = otpStore.get(request.getEmailId());
 
-otpData data = otpStore.get(request.getEmailId());
-
-System.out.println("STORED OTP = " +
-        (data == null ? "NULL" : data.getOtp()));
-
-System.out.println("ENTERED OTP = " + request.getOtp());
-System.out.println("MAP SIZE = " + otpStore.size());
-System.out.println("================================");
-
+    
         if(data == null){
             throw new ErrorException("OTP NOT FOUND!",HttpStatus.UNAUTHORIZED);
         }
@@ -164,6 +191,10 @@ System.out.println("================================");
         otpStore.remove(request.getEmailId());
 
         String token=jwtService.generateToken(user.getId(),user.getEmailId());
+
+         System.out.println("Jwt token generate successfully for user");
+
+
 
         return new loginResponse(user.getId(),user.getUserName(),user.getEmailId(),user.getPhoneNumber(),token);
     }

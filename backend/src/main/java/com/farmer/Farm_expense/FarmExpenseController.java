@@ -41,7 +41,7 @@ public class FarmExpenseController {
         return farmExpenseService.patchFarmExpense(id,dto);
     }
 
-    @DeleteMapping 
+    @DeleteMapping("/{id}")
     public void deleteFarmExpense(@Valid @PathVariable Long id){
         farmExpenseService.deleteFarmExpense(id);
     }
