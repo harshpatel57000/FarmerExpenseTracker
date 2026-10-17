@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // Physical Android phone and computer must be on the same Wi-Fi.
   // Spring Boot backend runs on port 8081.
-  static const String baseUrl = 'http://10.252.120.188:8081';
+  static const String baseUrl = 'http://10.252.120.174:8081';
 
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'user_id';
@@ -115,22 +115,19 @@ class ApiService {
     throw Exception('Expected a JSON object, received: $data');
   }
 
-  
-static List<dynamic> _asList(dynamic response) {
-  // The server response may already be decoded,
-  // or it may still be a JSON String.
-  final dynamic decoded =
-      response is String ? jsonDecode(response) : response;
+  static List<dynamic> _asList(dynamic response) {
+    // The server response may already be decoded,
+    // or it may still be a JSON String.
+    final dynamic decoded = response is String
+        ? jsonDecode(response)
+        : response;
 
-  if (decoded is List) {
-    return decoded;
+    if (decoded is List) {
+      return decoded;
+    }
+
+    throw Exception('Expected a JSON list, received: ${decoded.runtimeType}');
   }
-
-  throw Exception(
-    'Expected a JSON list, received: ${decoded.runtimeType}',
-  );
-}
-
 
   // ============================================================
   // TOKEN STORAGE
@@ -274,7 +271,6 @@ static List<dynamic> _asList(dynamic response) {
   // ============================================================
 
   // GET /api/village
-  
 
   // GET /api/village
   static Future<List<dynamic>> getVillages() async {
@@ -299,12 +295,8 @@ static List<dynamic> _asList(dynamic response) {
       return decoded;
     }
 
-    throw Exception(
-      'Invalid village response: ${decoded.runtimeType}',
-    );
+    throw Exception('Invalid village response: ${decoded.runtimeType}');
   }
-
-
 
   // GET /api/village/{id}
   static Future<dynamic> getVillageById(int id) async {
@@ -343,7 +335,7 @@ static List<dynamic> _asList(dynamic response) {
 
   // GET /api/region
   static Future<List<dynamic>> getRegions() async {
-    return _asList(await _request('GET', '/api/region',authenticated: true,),);
+    return _asList(await _request('GET', '/api/region', authenticated: true));
   }
 
   // GET /api/region/{id}
@@ -377,7 +369,7 @@ static List<dynamic> _asList(dynamic response) {
 
   // GET /api/farm
   static Future<List<dynamic>> getFarms() async {
-    return _asList(await _request('GET', '/api/farm', authenticated: true),);
+    return _asList(await _request('GET', '/api/farm', authenticated: true));
   }
 
   // GET /api/farm/{id}
@@ -406,49 +398,36 @@ static List<dynamic> _asList(dynamic response) {
     return _request('DELETE', '/api/farm/$id', authenticated: true);
   }
 
-  
+  // ============================================================
+  // CROP CYCLE
+  // ============================================================
 
-// ============================================================
-// CROP CYCLE
-// ============================================================
+  // GET /api/cropcycle/farm/{farmId}
+  static Future<List<dynamic>> getCropCyclesByFarm(int farmId) async {
+    return _asList(
+      await _request('GET', '/api/cropcycle/farm/$farmId', authenticated: true),
+    );
+  }
 
-// GET /api/cropcycle/farm/{farmId}
-static Future<List<dynamic>> getCropCyclesByFarm(
-  int farmId,
-) async {
-  return _asList(
-    await _request(
-      'GET',
-      '/api/cropcycle/farm/$farmId',
+  // POST /api/cropcycle
+  static Future<dynamic> addCropCycle({
+    required Map<String, dynamic> body,
+  }) async {
+    return _request('POST', '/api/cropcycle', body: body, authenticated: true);
+  }
+
+  // PUT /api/cropcycle/{id}/complete
+  static Future<dynamic> completeCropCycle(
+    int id, {
+    required String endDate,
+  }) async {
+    return _request(
+      'PUT',
+      '/api/cropcycle/$id/complete',
+      body: {'endDate': endDate},
       authenticated: true,
-    ),
-  );
-}
-
-// POST /api/cropcycle
-static Future<dynamic> addCropCycle({
-  required Map<String, dynamic> body,
-}) async {
-  return _request(
-    'POST',
-    '/api/cropcycle',
-    body: body,
-    authenticated: true,
-  );
-}
-
-// PUT /api/cropcycle/{id}/complete
-static Future<dynamic> completeCropCycle(
-  int id, {
-  required String endDate,
-}) async {
-  return _request(
-    'PUT',
-    '/api/cropcycle/$id/complete',
-    body: {'endDate': endDate},
-    authenticated: true,
-  );
-}
+    );
+  }
 
   // ============================================================
   // AGRO EXPENSE
@@ -549,5 +528,36 @@ static Future<dynamic> completeCropCycle(
   // DELETE /api/farm_expense/{id}
   static Future<dynamic> deleteFarmExpense(int id) async {
     return _request('DELETE', '/api/farm_expense/$id', authenticated: true);
+  }
+
+  // total farmExpense
+  Future<Map<String, dynamic>> searchFarmExpenses({
+    required String cropName,
+    required int year,
+    int page = 0,
+    int size = 20,
+  }) async {
+    final query = <String, String>{
+      'cropName': cropName,
+      'year': year.toString(),
+      'page': page.toString(),
+      'size': size.toString(),
+      'sortBy': 'expenseDate',
+      'direction': 'desc',
+    };
+
+    final queryString = Uri(queryParameters: query).query;
+
+    final response = await _request(
+      'GET',
+      '/api/farm_expense/search?$queryString',
+      authenticated: true,
+    );
+
+    if (response is Map<String, dynamic>) {
+      return response;
+    }
+
+    throw Exception('Invalid expense response from server');
   }
 }

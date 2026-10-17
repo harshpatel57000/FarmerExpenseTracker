@@ -21,6 +21,8 @@ public class FarmExpenseDTO {
     @NotNull(message = "Please enter the Farm ID")
     private Long farmId;
 
+    private Long cropCycleId;
+
     @NotNull(message = "Please enter the Expense Type")
     private ExpenseType expenseType;
 

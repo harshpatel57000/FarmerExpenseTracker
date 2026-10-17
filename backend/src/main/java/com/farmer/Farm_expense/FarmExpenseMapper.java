@@ -29,6 +29,7 @@ public class FarmExpenseMapper {
         return FarmExpenseDTO.builder()
                 .id(entity.getId())
                 .farmId(entity.getFarmId()) // Return farm ID
+                .cropCycleId(entity.getCropCycle() != null? entity.getCropCycle().getId(): null)
                 .expenseType(entity.getExpenseType())
                 .expenseName(entity.getExpenseName())
                 .agroQuantity(entity.getAgroQuantity())

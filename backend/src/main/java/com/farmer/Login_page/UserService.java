@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.farmer.Login_page.OTP.verifyOTP;
+
 import com.farmer.Login_page.UserDTO.*;
 import com.farmer.Login_page.OTP.*;
 
@@ -15,8 +17,8 @@ import com.farmer.Login_page.jwt_token.JwtService;
 
 import com.farmer.exception.ErrorException;
 
-
 import lombok.RequiredArgsConstructor;
+
 
 @RequiredArgsConstructor
 @Service
@@ -46,7 +48,7 @@ public class UserService {
         long expiryTime =System.currentTimeMillis()+(10 * 60* 1000);
 
 
-        otpStore.put(sign.getEmailId(),new otpData(otp,expiryTime,sign.getUserName(),sign.getEmailId(),sign.getPhoneNumber(),passwordHash));
+        signOtpStore.put(sign.getEmailId(),new otpData(otp,expiryTime,sign.getUserName(),sign.getEmailId(),sign.getPhoneNumber(),passwordHash));
 
         emailService.sendOtp(sign.getEmailId(),otp);
 
@@ -56,14 +58,14 @@ public class UserService {
 
     public loginResponse verifySignupOtp(verifyOTP request){
 
-        otpData data=otpStore.get(request.getEmailId());
+        otpData data=signOtpStore.get(request.getEmailId());
 
         if(data == null){
             throw new ErrorException("Signup OTP not found!",HttpStatus.UNAUTHORIZED);
         }
 
         if(System.currentTimeMillis() > data.getExpiryTime()){
-            otpStore.remove(request.getEmailId());
+            signOtpStore.remove(request.getEmailId());
             throw new ErrorException("OTP expired!",HttpStatus.UNAUTHORIZED);
         }
 
@@ -136,7 +138,10 @@ public class UserService {
 
     //----------------------OTP SECTORE [LOGIN THROUGH OTP]----------------------//
     
-    private final Map<String,otpData> otpStore=new ConcurrentHashMap<>();
+    private final Map<String,otpData> loginOtpStore=new ConcurrentHashMap<>();
+
+    private final Map<String,otpData> signOtpStore=new ConcurrentHashMap<>();
+
 
         
 
@@ -148,9 +153,11 @@ public class UserService {
 
         String otp=generateOtp();
 
+        System.out.println("Generated OTP: " + otp); 
+        // Log the generated OTP for debugging
         long expiryTime =System.currentTimeMillis()+(10 * 60* 1000);
 
-        otpStore.put(request.getEmailId(),new otpData(otp, expiryTime));
+        loginOtpStore.put(request.getEmailId(),new otpData(otp, expiryTime));
 
         emailService.sendOtp(request.getEmailId(),otp);
     }
@@ -167,7 +174,7 @@ public class UserService {
      public loginResponse verifyLoginOtp(verifyOTP request){
 
     
-    otpData data = otpStore.get(request.getEmailId());
+    otpData data = loginOtpStore.get(request.getEmailId());
 
     
         if(data == null){
@@ -175,7 +182,7 @@ public class UserService {
         }
 
         if(System.currentTimeMillis()>data.getExpiryTime()){
-            otpStore.remove(request.getEmailId());
+            loginOtpStore.remove(request.getEmailId());
 
             throw new ErrorException("otp expired!",HttpStatus.UNAUTHORIZED);
         }
@@ -188,7 +195,7 @@ public class UserService {
 
         User user =userRepository.findByEmailId(request.getEmailId()).orElseThrow(()->new ErrorException("user not found!",HttpStatus.NOT_FOUND));
 
-        otpStore.remove(request.getEmailId());
+        loginOtpStore.remove(request.getEmailId());
 
         String token=jwtService.generateToken(user.getId(),user.getEmailId());
 

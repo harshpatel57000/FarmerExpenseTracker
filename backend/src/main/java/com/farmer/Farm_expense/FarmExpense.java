@@ -2,6 +2,8 @@ package com.farmer.Farm_expense;
 
 import java.time.LocalDate;
 
+import com.farmer.Farm_expense.CropCycle.CropCycle;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +24,10 @@ public class FarmExpense {
     @Id 
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "crop_cycle_id")
+    private CropCycle cropCycle;
 
     @Column(name="farm_id",nullable=false)
     private Long farmId;

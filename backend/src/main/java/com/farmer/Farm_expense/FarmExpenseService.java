@@ -1,10 +1,19 @@
 package com.farmer.Farm_expense;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import org.springframework.stereotype.*;
 
+import com.farmer.Farm_expense.CropCycle.CropCycle;
+import com.farmer.Farm_expense.CropCycle.CropCycleRepository;
 import com.farmer.exception.ErrorException;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import lombok.AllArgsConstructor;
 
@@ -13,10 +22,21 @@ import lombok.AllArgsConstructor;
 public class FarmExpenseService {
 
     public final FarmExpenseRepository farmExpenseRepository;
+    public final CropCycleRepository cropCycleRepository;
 
     //POST
     public FarmExpenseDTO saveFarmExpense(FarmExpenseDTO dto){
-        return FarmExpenseMapper.toDTO(farmExpenseRepository.save(FarmExpenseMapper.toEntity(dto)));
+        FarmExpense entity =FarmExpenseMapper.toEntity(dto);
+
+        if(dto.getCropCycleId() != null){
+            CropCycle cropCycle =cropCycleRepository.findById(dto.getCropCycleId()).orElseThrow(()->new ErrorException("CropCycle not fround"));
+            
+            if(!cropCycle.getFarm().getId().equals(dto.getFarmId())){
+                throw new ErrorException("Crop cycle does not belong to the specified farm");
+            }
+            entity.setCropCycle(cropCycle);
+        }
+        return FarmExpenseMapper.toDTO(farmExpenseRepository.save(entity));
     }
 
     //GET 
@@ -106,5 +126,65 @@ public class FarmExpenseService {
     public void deleteFarmExpense(Long id){
         farmExpenseRepository.deleteById(id);
     }
+
+
+
+// Add this method inside your existing FarmExpenseService class.
+
+public Page<FarmExpenseDTO> searchFarmExpenses(
+        String cropName,
+        int year,
+        int page,
+        int size,
+        String sortBy,
+        String direction) {
+
+    if (cropName == null || cropName.isBlank()) {
+        throw new IllegalArgumentException("Crop name is required");
+    }
+
+    if (year < 2000 || year > 2100) {
+        throw new IllegalArgumentException("Invalid year");
+    }
+
+    if (page < 0) {
+        throw new IllegalArgumentException("Page cannot be negative");
+    }
+
+    if (size < 1 || size > 100) {
+        throw new IllegalArgumentException(
+                "Page size must be between 1 and 100");
+    }
+
+    Set<String> allowedSortFields = Set.of(
+            "id",
+            "expenseDate",
+            "expenseName",
+            "totalCost"
+    );
+
+    if (sortBy == null || !allowedSortFields.contains(sortBy)) {
+        sortBy = "expenseDate";
+    }
+
+    Sort sort = "asc".equalsIgnoreCase(direction)
+            ? Sort.by(sortBy).ascending()
+            : Sort.by(sortBy).descending();
+
+    Pageable pageable = PageRequest.of(page, size, sort);
+
+    LocalDate startDate = LocalDate.of(year, 1, 1);
+    LocalDate endDate = LocalDate.of(year, 12, 31);
+
+    Page<FarmExpense> expensePage =farmExpenseRepository.findByCropCycle_CropNameIgnoreCaseAndCropCycle_StartDateBetween(
+                            cropName.trim(),
+                            startDate,
+                            endDate,
+                            pageable
+                    );
+
+    return expensePage.map(FarmExpenseMapper::toDTO);
+}
+
 
 }

@@ -2,15 +2,17 @@ package com.farmer.Farm_expense;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor 
+@AllArgsConstructor 
 @RestController
 @RequestMapping("/api/farm_expense") 
 public class FarmExpenseController {
@@ -26,24 +28,51 @@ public class FarmExpenseController {
         return farmExpenseService.getFarmExpense();
     }
 
-    @GetMapping("/{id}")
-    public FarmExpenseDTO getFarmExpenseById(@Valid @PathVariable Long id){
+    @GetMapping("/{id:\\d+}")
+    public FarmExpenseDTO getFarmExpenseById(
+            @PathVariable Long id) {
         return farmExpenseService.getFarmExpenseById(id);
     }
 
-    @PutMapping("/{id}")
-    public FarmExpenseDTO updateFarmExpense(@Valid @PathVariable Long id,@RequestBody FarmExpenseDTO dto){
-        return farmExpenseService.updateFarmExpense(id,dto);
+    @PutMapping("/{id:\\d+}")
+    public FarmExpenseDTO updateFarmExpense(
+            @PathVariable Long id,
+            @Valid @RequestBody FarmExpenseDTO dto) {
+        return farmExpenseService.updateFarmExpense(id, dto);
     }
 
-    @PatchMapping("/{id}")
-    public FarmExpenseDTO patchFarmExpense(@Valid @PathVariable Long id,@RequestBody FarmExpenseDTO dto){
-        return farmExpenseService.patchFarmExpense(id,dto);
+    @PatchMapping("/{id:\\d+}")
+    public FarmExpenseDTO patchFarmExpense(
+            @PathVariable Long id,
+            @RequestBody FarmExpenseDTO dto) {
+        return farmExpenseService.patchFarmExpense(id, dto);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteFarmExpense(@Valid @PathVariable Long id){
+    @DeleteMapping("/{id:\\d+}")
+    public void deleteFarmExpense(@PathVariable Long id) {
         farmExpenseService.deleteFarmExpense(id);
     }
-    
+
+    // Add inside FarmExpenseController.
+
+    @GetMapping("/search")
+    public Page<FarmExpenseDTO> searchFarmExpenses(
+        @RequestParam String cropName,
+        @RequestParam int year,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size,
+        @RequestParam(defaultValue = "expenseDate") String sortBy,
+        @RequestParam(defaultValue = "desc") String direction) {
+
+    return farmExpenseService.searchFarmExpenses(
+            cropName,
+            year,
+            page,
+            size,
+            sortBy,
+            direction
+    );
 }
+}
+
+
