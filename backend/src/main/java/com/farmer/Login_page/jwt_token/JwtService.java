@@ -1,3 +1,4 @@
+
 package com.farmer.Login_page.jwt_token;
 
 import io.jsonwebtoken.Jwts;
@@ -17,20 +18,25 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secret;
 
+    // Expiration is configured in milliseconds.
     @Value("${jwt.expiration}")
     private long expiration;
 
     private SecretKey getKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(
+                secret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     public String generateToken(Long userId, String email) {
 
+        long now = System.currentTimeMillis();
+
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + expiration))
                 .signWith(getKey())
                 .compact();
     }
@@ -50,11 +56,20 @@ public class JwtService {
     }
 
     public String extractEmail(String jwt) {
-        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().getSubject();
+        return Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(jwt)
+                .getPayload()
+                .getSubject();
     }
 
     public Long extractUserId(String jwt) {
-        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(jwt).getPayload().get("userId", Long.class);
+        return Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(jwt)
+                .getPayload()
+                .get("userId", Long.class);
     }
-
 }

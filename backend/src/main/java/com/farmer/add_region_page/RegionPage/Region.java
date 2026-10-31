@@ -1,5 +1,6 @@
 package com.farmer.add_region_page.RegionPage;
 
+import com.farmer.Login_page.User;
 import com.farmer.add_region_page.VillagePage.Village;
 
 import jakarta.persistence.*;
@@ -23,5 +24,9 @@ public class Region {
      @ManyToOne
      @JoinColumn(name="village_id")
      private Village village;
-
+    
+     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+     @JoinColumn(name = "user_id", nullable = false)
+     private User user;
+     
 }

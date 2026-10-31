@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/login_page.dart';
+import 'package:frontend/pages/welcome_page.dart';
 
 void main() {
   runApp(const FarmExpenseApp());
@@ -25,7 +25,7 @@ class FarmExpenseApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
 
-      home: const LoginPage(),
+      home: const WelcomePage(),
     );
   }
 }

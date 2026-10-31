@@ -46,9 +46,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> runRequest(
-    Future<void> Function() action,
-  ) async {
+  Future<void> runRequest(Future<void> Function() action) async {
     if (isLoading) return;
 
     setState(() => isLoading = true);
@@ -56,9 +54,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await action();
     } catch (e) {
-      showMessage(
-        e.toString().replaceFirst('Exception: ', ''),
-      );
+      showMessage(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -71,9 +67,7 @@ class _LoginPageState extends State<LoginPage> {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => HomePage(),
-      ),
+      MaterialPageRoute(builder: (_) => HomePage()),
       (route) => false,
     );
   }
@@ -81,8 +75,7 @@ class _LoginPageState extends State<LoginPage> {
   String get emailOrPhone => emailController.text.trim();
 
   bool get looksLikeEmail =>
-      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-          .hasMatch(emailOrPhone);
+      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(emailOrPhone);
 
   Future<void> passwordLogin() async {
     if (!_formKey.currentState!.validate()) return;
@@ -104,14 +97,12 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     await runRequest(() async {
-      await ApiService.sendLoginOtp(
-        emailId: emailOrPhone,
-      );
+      await ApiService.sendLoginOtp(emailId: emailOrPhone);
 
       if (!mounted) return;
 
-      otpController.clear();
       setState(() => otpSent = true);
+      otpController.clear();
 
       showMessage('તમારા ઈમેલ પર OTP મોકલવામાં આવ્યો છે');
     });
@@ -153,342 +144,323 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9F5),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(22),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 440,
-              ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 20),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+              'assets/images/Singup_background_image.png',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          color: Colors.white.withValues(alpha: 0.70),
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(22),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 20),
 
-                    // Farming logo
-                    Center(
-                      child: Container(
-                        height: 88,
-                        width: 88,
-                        decoration: BoxDecoration(
-                          color: lightGreen,
-                          borderRadius:
-                              BorderRadius.circular(26),
-                        ),
-                        child: const Icon(
-                          Icons.agriculture_rounded,
-                          color: green,
-                          size: 52,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    const Text(
-                      'Farmer Expense Tracker',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
-                        color: green,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    const Text(
-                      'તમારા ખેતીના ખર્ચનું સરળ સંચાલન',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.black54,
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Login card
-                    Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black
-                                .withValues(alpha: 0.05),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.stretch,
-                        children: [
-                          const Text(
-                            'તમારું સ્વાગત છે!',
-                            style: TextStyle(
-                              fontSize: 23,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 7),
-
-                          const Text(
-                            'લોગિન કરવાની રીત પસંદ કરો',
-                            style: TextStyle(
-                              color: Colors.black54,
-                            ),
-                          ),
-
-                          const SizedBox(height: 22),
-
-                          // Two login options
-                          Container(
-                            padding:
-                                const EdgeInsets.all(4),
+                        Center(
+                          child: Container(
+                            height: 88,
+                            width: 88,
                             decoration: BoxDecoration(
                               color: lightGreen,
-                              borderRadius:
-                                  BorderRadius.circular(13),
+                              borderRadius: BorderRadius.circular(26),
                             ),
-                            child: Row(
-                              children: [
-                                _methodButton(
-                                  label: 'પાસવર્ડ',
-                                  icon: Icons.lock_outline,
-                                  selected: !isOtpMode,
-                                  onTap: () =>
-                                      selectMethod(false),
-                                ),
-                                _methodButton(
-                                  label: 'ઈમેલ OTP',
-                                  icon: Icons.mail_outline,
-                                  selected: isOtpMode,
-                                  onTap: () =>
-                                      selectMethod(true),
-                                ),
-                              ],
+                            child: const Icon(
+                              Icons.agriculture_rounded,
+                              color: green,
+                              size: 52,
                             ),
                           ),
+                        ),
 
-                          const SizedBox(height: 22),
+                        const SizedBox(height: 20),
 
-                          // Email or phone for password login;
-                          // email only for OTP login.
-                          TextFormField(
-                            controller: emailController,
-                            keyboardType: isOtpMode
-                                ? TextInputType.emailAddress
-                                : TextInputType.text,
-                            autocorrect: false,
-                            decoration: _decoration(
-                              label: isOtpMode
-                                  ? 'ઈમેલ'
-                                  : 'ઈમેલ અથવા મોબાઈલ નંબર',
-                              hint: isOtpMode
-                                  ? 'તમારો ઈમેલ દાખલ કરો'
-                                  : 'ઈમેલ અથવા મોબાઈલ દાખલ કરો',
-                              icon: Icons.person_outline,
-                            ),
-                            validator: (value) {
-                              final text =
-                                  value?.trim() ?? '';
-
-                              if (text.isEmpty) {
-                                return 'ઈમેલ અથવા મોબાઈલ દાખલ કરો';
-                              }
-
-                              if (isOtpMode &&
-                                  !RegExp(
-                                    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                                  ).hasMatch(text)) {
-                                return 'સાચો ઈમેલ દાખલ કરો';
-                              }
-
-                              return null;
-                            },
+                        const Text(
+                          'Farmer Expense Tracker',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            color: green,
                           ),
+                        ),
 
-                          if (!isOtpMode) ...[
-                            const SizedBox(height: 16),
+                        const SizedBox(height: 10),
 
-                            TextFormField(
-                              controller: passwordController,
-                              obscureText: !passwordVisible,
-                              decoration: _decoration(
-                                label: 'પાસવર્ડ',
-                                hint: 'તમારો પાસવર્ડ દાખલ કરો',
-                                icon: Icons.lock_outline,
-                              ).copyWith(
-                                suffixIcon: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      passwordVisible =
-                                          !passwordVisible;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    passwordVisible
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (!isOtpMode &&
-                                    (value == null ||
-                                        value.isEmpty)) {
-                                  return 'પાસવર્ડ દાખલ કરો';
-                                }
-                                return null;
-                              },
-                            ),
+                        const Text(
+                          'તમારા ખેતીના ખર્ચનું સરળ સંચાલન',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                        ),
 
-                            const SizedBox(height: 22),
+                        const SizedBox(height: 30),
 
-                            _primaryButton(
-                              label: 'લોગિન કરો',
-                              icon: Icons.login,
-                              onPressed: passwordLogin,
-                            ),
-                          ],
-
-                          if (isOtpMode) ...[
-                            if (!otpSent) ...[
-                              const SizedBox(height: 22),
-
-                              _primaryButton(
-                                label: 'ઈમેલ પર OTP મોકલો',
-                                icon: Icons.mark_email_read_outlined,
-                                onPressed: sendOtp,
+                        Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.96),
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.10),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
                               ),
                             ],
-
-                            if (otpSent) ...[
-                              Container(
-                                margin: const EdgeInsets.only(
-                                  top: 14,
-                                  bottom: 16,
-                                ),
-                                padding:
-                                    const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: lightGreen,
-                                  borderRadius:
-                                      BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'OTP મોકલ્યો છે: $emailOrPhone',
-                                  style: const TextStyle(
-                                    color: green,
-                                  ),
-                                ),
-                              ),
-
-                              TextFormField(
-                                controller: otpController,
-                                keyboardType:
-                                    TextInputType.number,
-                                maxLength: 6,
-                                decoration: _decoration(
-                                  label: 'OTP',
-                                  hint: 'OTP દાખલ કરો',
-                                  icon: Icons.password_outlined,
-                                ),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              _primaryButton(
-                                label: 'ચકાસો અને લોગિન કરો',
-                                icon: Icons.verified_user_outlined,
-                                onPressed: verifyOtp,
-                              ),
-
-                              TextButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : sendOtp,
-                                child: const Text(
-                                  'ફરીથી OTP મોકલો',
-                                  style: TextStyle(
-                                    color: green,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-
-                          if (isLoading) ...[
-                            const SizedBox(height: 18),
-                            const Center(
-                              child: CircularProgressIndicator(
-                                color: green,
-                              ),
-                            ),
-                          ],
-
-                          const SizedBox(height: 20),
-                          const Divider(),
-                          const SizedBox(height: 8),
-
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            crossAxisAlignment:
-                                WrapCrossAlignment.center,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const Text(
-                                'એકાઉન્ટ નથી? ',
+                                'તમારું સ્વાગત છે!',
                                 style: TextStyle(
-                                  color: Colors.black54,
+                                  fontSize: 23,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              TextButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const CreateAccountPage(),
-                                          ),
-                                        );
+
+                              const SizedBox(height: 7),
+
+                              const Text(
+                                'લોગિન કરવાની રીત પસંદ કરો',
+                                style: TextStyle(color: Colors.black54),
+                              ),
+
+                              const SizedBox(height: 22),
+
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: lightGreen,
+                                  borderRadius: BorderRadius.circular(13),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _methodButton(
+                                      label: 'પાસવર્ડ',
+                                      icon: Icons.lock_outline,
+                                      selected: !isOtpMode,
+                                      onTap: () => selectMethod(false),
+                                    ),
+                                    _methodButton(
+                                      label: 'ઈમેલ OTP',
+                                      icon: Icons.mail_outline,
+                                      selected: isOtpMode,
+                                      onTap: () => selectMethod(true),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 22),
+
+                              TextFormField(
+                                controller: emailController,
+                                keyboardType: isOtpMode
+                                    ? TextInputType.emailAddress
+                                    : TextInputType.text,
+                                autocorrect: false,
+                                decoration: _decoration(
+                                  label: isOtpMode
+                                      ? 'ઈમેલ'
+                                      : 'ઈમેલ અથવા મોબાઈલ નંબર',
+                                  hint: isOtpMode
+                                      ? 'તમારો ઈમેલ દાખલ કરો'
+                                      : 'ઈમેલ અથવા મોબાઈલ દાખલ કરો',
+                                  icon: Icons.person_outline,
+                                ),
+                                validator: (value) {
+                                  final text = value?.trim() ?? '';
+
+                                  if (text.isEmpty) {
+                                    return 'ઈમેલ અથવા મોબાઈલ દાખલ કરો';
+                                  }
+
+                                  if (isOtpMode &&
+                                      !RegExp(
+                                        r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                      ).hasMatch(text)) {
+                                    return 'સાચો ઈમેલ દાખલ કરો';
+                                  }
+
+                                  return null;
+                                },
+                              ),
+
+                              if (!isOtpMode) ...[
+                                const SizedBox(height: 16),
+
+                                TextFormField(
+                                  controller: passwordController,
+                                  obscureText: !passwordVisible,
+                                  decoration: _decoration(
+                                    label: 'પાસવર્ડ',
+                                    hint: 'તમારો પાસવર્ડ દાખલ કરો',
+                                    icon: Icons.lock_outline,
+                                  ).copyWith(
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          passwordVisible = !passwordVisible;
+                                        });
                                       },
-                                child: const Text(
-                                  'નવું એકાઉન્ટ બનાવો',
-                                  style: TextStyle(
+                                      icon: Icon(
+                                        passwordVisible
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (!isOtpMode &&
+                                        (value == null || value.isEmpty)) {
+                                      return 'પાસવર્ડ દાખલ કરો';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 22),
+
+                                _primaryButton(
+                                  label: 'લોગિન કરો',
+                                  icon: Icons.login,
+                                  onPressed: passwordLogin,
+                                ),
+                              ],
+
+                              if (isOtpMode) ...[
+                                if (!otpSent) ...[
+                                  const SizedBox(height: 22),
+                                  _primaryButton(
+                                    label: 'ઈમેલ પર OTP મોકલો',
+                                    icon: Icons.mark_email_read_outlined,
+                                    onPressed: sendOtp,
+                                  ),
+                                ],
+
+                                if (otpSent) ...[
+                                  Container(
+                                    margin: const EdgeInsets.only(
+                                      top: 14,
+                                      bottom: 16,
+                                    ),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: lightGreen,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'OTP મોકલ્યો છે: $emailOrPhone',
+                                      style: const TextStyle(color: green),
+                                    ),
+                                  ),
+
+                                  TextFormField(
+                                    controller: otpController,
+                                    keyboardType: TextInputType.number,
+                                    maxLength: 6,
+                                    decoration: _decoration(
+                                      label: 'OTP',
+                                      hint: 'OTP દાખલ કરો',
+                                      icon: Icons.password_outlined,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 8),
+
+                                  _primaryButton(
+                                    label: 'ચકાસો અને લોગિન કરો',
+                                    icon: Icons.verified_user_outlined,
+                                    onPressed: verifyOtp,
+                                  ),
+
+                                  TextButton(
+                                    onPressed: isLoading ? null : sendOtp,
+                                    child: const Text(
+                                      'ફરીથી OTP મોકલો',
+                                      style: TextStyle(color: green),
+                                    ),
+                                  ),
+                                ],
+                              ],
+
+                              if (isLoading) ...[
+                                const SizedBox(height: 18),
+                                const Center(
+                                  child: CircularProgressIndicator(
                                     color: green,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                              ],
+
+                              const SizedBox(height: 20),
+                              const Divider(),
+                              const SizedBox(height: 8),
+
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  const Text(
+                                    'એકાઉન્ટ નથી? ',
+                                    style: TextStyle(color: Colors.black54),
+                                  ),
+                                  TextButton(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const CreateAccountPage(),
+                                              ),
+                                            );
+                                          },
+                                    child: const Text(
+                                      'નવું એકાઉન્ટ બનાવો',
+                                      style: TextStyle(
+                                        color: green,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
 
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                    const Text(
-                      'તમારા ખેતરનો હિસાબ, હવે સરળતાથી.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.black45,
-                        fontSize: 13,
-                      ),
+                        const Text(
+                          'તમારા ખેતરનો હિસાબ, હવે સરળતાથી.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -510,10 +482,7 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(10),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(
-            vertical: 13,
-            horizontal: 6,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 6),
           decoration: BoxDecoration(
             color: selected ? green : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
@@ -521,11 +490,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 18,
-                color: selected ? Colors.white : green,
-              ),
+              Icon(icon, size: 18, color: selected ? Colors.white : green),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -561,22 +526,15 @@ class _LoginPageState extends State<LoginPage> {
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(
-          color: Color(0xFFDCE6DC),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFDCE6DC)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(
-          color: Color(0xFFDCE6DC),
-        ),
+        borderSide: const BorderSide(color: Color(0xFFDCE6DC)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(
-          color: green,
-          width: 1.7,
-        ),
+        borderSide: const BorderSide(color: green, width: 1.7),
       ),
     );
   }
@@ -601,7 +559,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: green,
-          disabledBackgroundColor: Colors.grey.shade400,
+          disabledBackgroundColor: Colors.grey,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(13),

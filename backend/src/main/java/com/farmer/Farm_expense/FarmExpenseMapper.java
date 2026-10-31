@@ -13,7 +13,7 @@ public class FarmExpenseMapper {
                 .farmId(dto.getFarmId()) // Important: save farm ID
                 .expenseType(dto.getExpenseType())
                 .expenseName(dto.getExpenseName())
-                .AgroQuantity(dto.getAgroQuantity())
+                .agroQuantity(dto.getAgroQuantity())
                 .totalAgroExpense(dto.getTotalAgroExpense())
                 .numberOfWorkers(dto.getNumberOfWorkers())
                 .pricePerWorker(dto.getPricePerWorker())

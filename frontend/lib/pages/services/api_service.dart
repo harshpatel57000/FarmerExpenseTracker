@@ -4,25 +4,27 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Physical Android phone and computer must be on the same Wi-Fi.
-  // Spring Boot backend runs on port 8081.
-  static const String baseUrl = 'http://10.252.120.174:8081';
+  // Physical phone: use your currently working laptop IP.
+  // USB reverse: use http://127.0.0.1:8081 and run:
+  // adb reverse tcp:8081 tcp:8081
+  static const String baseUrl = 'http://10.244.72.152:8081';
 
   static const String _tokenKey = 'jwt_token';
+  static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
+
+  static Uri _uri(String path) => Uri.parse('$baseUrl$path');
 
   // ============================================================
   // COMMON HTTP METHODS
-  // Every endpoint explicitly starts with /api/...
   // ============================================================
-
-  static Uri _uri(String path) => Uri.parse('$baseUrl$path');
 
   static Future<dynamic> _request(
     String method,
     String path, {
     Map<String, dynamic>? body,
     bool authenticated = false,
+    bool retryOnUnauthorized = true,
   }) async {
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -79,7 +81,13 @@ class ApiService {
 
     print('$method $uri');
     print('STATUS: ${response.statusCode}');
-    print('BODY: ${response.body}');
+
+    // Do not print authentication responses because they may contain tokens.
+    if (path.startsWith('/api/auth/')) {
+      print('BODY: [authentication response hidden]');
+    } else {
+      print('BODY: ${response.body}');
+    }
 
     dynamic data;
 
@@ -91,22 +99,46 @@ class ApiService {
       }
     }
 
+    // Refresh an expired access token once.
+    if (response.statusCode == 401 &&
+        authenticated &&
+        retryOnUnauthorized &&
+        path != '/api/auth/refresh' &&
+        path != '/api/auth/logout') {
+      final refreshed = await _refreshAccessToken();
+
+      if (refreshed) {
+        return _request(
+          method,
+          path,
+          body: body,
+          authenticated: true,
+          retryOnUnauthorized: false,
+        );
+      }
+
+      await _clearSession();
+      throw Exception('Session expired. Please log in again.');
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
 
     final message = data is Map
         ? (data['message'] ??
-              data['error'] ??
-              data['detail'] ??
-              data.toString())
+            data['error'] ??
+            data['detail'] ??
+            data.toString())
         : (data?.toString() ?? 'Request failed');
 
     throw Exception('$message (HTTP ${response.statusCode})');
   }
 
   static Map<String, dynamic> _asMap(dynamic data) {
-    if (data is Map<String, dynamic>) return data;
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
 
     if (data is Map) {
       return Map<String, dynamic>.from(data);
@@ -116,17 +148,16 @@ class ApiService {
   }
 
   static List<dynamic> _asList(dynamic response) {
-    // The server response may already be decoded,
-    // or it may still be a JSON String.
-    final dynamic decoded = response is String
-        ? jsonDecode(response)
-        : response;
+    final dynamic decoded =
+        response is String ? jsonDecode(response) : response;
 
     if (decoded is List) {
       return decoded;
     }
 
-    throw Exception('Expected a JSON list, received: ${decoded.runtimeType}');
+    throw Exception(
+      'Expected a JSON list, received: ${decoded.runtimeType}',
+    );
   }
 
   // ============================================================
@@ -136,15 +167,21 @@ class ApiService {
   static Future<void> _saveTokenFromResponse(dynamic data) async {
     if (data is! Map) return;
 
-    final token =
-        data['token'] ??
+    final accessToken = data['token'] ??
         data['jwt'] ??
         data['accessToken'] ??
         data['access_token'];
 
-    if (token is String && token.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_tokenKey, token);
+    final refreshToken = data['refreshToken'] ?? data['refresh_token'];
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (accessToken is String && accessToken.isNotEmpty) {
+      await prefs.setString(_tokenKey, accessToken);
+    }
+
+    if (refreshToken is String && refreshToken.isNotEmpty) {
+      await prefs.setString(_refreshTokenKey, refreshToken);
     }
   }
 
@@ -153,11 +190,14 @@ class ApiService {
     return prefs.getString(_tokenKey);
   }
 
-  // Save the logged-in user's ID.
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
+  }
+
   static Future<void> _saveUserIdFromResponse(dynamic data) async {
     if (data is! Map) return;
 
-    // Supports common backend response field names.
     final rawUserId = data['userId'] ?? data['id'] ?? data['user_id'];
 
     if (rawUserId == null) return;
@@ -172,23 +212,133 @@ class ApiService {
     }
   }
 
-  // Read the logged-in user's ID.
   static Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_userIdKey);
   }
 
-  static Future<void> logout() async {
+  static Future<void> _clearSession() async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.remove(_tokenKey);
+    await prefs.remove(_refreshTokenKey);
     await prefs.remove(_userIdKey);
+  }
+
+  /// Restores a saved session by refreshing the access token.
+  static Future<bool> restoreSession() async {
+    final refreshToken = await getRefreshToken();
+
+    if (refreshToken == null || refreshToken.isEmpty) {
+      await _clearSession();
+      return false;
+    }
+
+    try {
+      return await _refreshAccessToken();
+    } catch (_) {
+      // Preserve the saved session if the server is temporarily unreachable.
+      print('Session restoration could not reach the server.');
+      return false;
+    }
+  }
+
+  // ============================================================
+  // REFRESH ACCESS TOKEN
+  // POST /api/auth/refresh
+  // ============================================================
+
+  static Future<bool> _refreshAccessToken() async {
+    final refreshToken = await getRefreshToken();
+
+    if (refreshToken == null || refreshToken.isEmpty) {
+      return false;
+    }
+
+    final response = await http.post(
+      _uri('/api/auth/refresh'),
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+
+    print('POST ${_uri('/api/auth/refresh')}');
+    print('REFRESH STATUS: ${response.statusCode}');
+    print('REFRESH BODY: [hidden]');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      await _clearSession();
+      return false;
+    }
+
+    dynamic data;
+
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      await _clearSession();
+      return false;
+    }
+
+    if (data is! Map) {
+      await _clearSession();
+      return false;
+    }
+
+    final accessToken = data['token'] ??
+        data['jwt'] ??
+        data['accessToken'] ??
+        data['access_token'];
+
+    final newRefreshToken = data['refreshToken'] ?? data['refresh_token'];
+
+    // Both tokens are required because the backend rotates refresh tokens.
+    if (accessToken is! String ||
+        accessToken.isEmpty ||
+        newRefreshToken is! String ||
+        newRefreshToken.isEmpty) {
+      await _clearSession();
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(_tokenKey, accessToken);
+    await prefs.setString(_refreshTokenKey, newRefreshToken);
+
+    return true;
+  }
+
+  // ============================================================
+  // LOGOUT
+  // POST /api/auth/logout
+  // ============================================================
+
+  static Future<void> logout() async {
+    final refreshToken = await getRefreshToken();
+
+    try {
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await http.post(
+          _uri('/api/auth/logout'),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({'refreshToken': refreshToken}),
+        );
+      }
+    } finally {
+      await _clearSession();
+    }
   }
 
   // ============================================================
   // AUTHENTICATION
   // ============================================================
 
-  // POST /api/auth/login
   static Future<dynamic> loginWithPassword({
     required String loginId,
     required String password,
@@ -207,10 +357,10 @@ class ApiService {
 
     await _saveTokenFromResponse(data);
     await _saveUserIdFromResponse(data);
+
     return data;
   }
 
-  // POST /api/auth/signup
   static Future<dynamic> signup({
     required String userName,
     required String emailId,
@@ -229,12 +379,16 @@ class ApiService {
     );
   }
 
-  // POST /api/auth/loginOtp
-  static Future<dynamic> sendLoginOtp({required String emailId}) async {
-    return _request('POST', '/api/auth/loginOtp', body: {'emailId': emailId});
+  static Future<dynamic> sendLoginOtp({
+    required String emailId,
+  }) async {
+    return _request(
+      'POST',
+      '/api/auth/loginOtp',
+      body: {'emailId': emailId},
+    );
   }
 
-  // POST /api/auth/verifyLoginOtp
   static Future<dynamic> verifyLoginOtp({
     required String emailId,
     required String otp,
@@ -247,10 +401,10 @@ class ApiService {
 
     await _saveTokenFromResponse(data);
     await _saveUserIdFromResponse(data);
+
     return data;
   }
 
-  // POST /api/auth/verifySignupOtp
   static Future<dynamic> verifySignupOtp({
     required String emailId,
     required String otp,
@@ -263,121 +417,110 @@ class ApiService {
 
     await _saveTokenFromResponse(data);
     await _saveUserIdFromResponse(data);
+
     return data;
   }
 
   // ============================================================
-  // VILLAGE
+  // PROFILE
+  // GET /api/auth/profile
+  // PUT /api/auth/profile
   // ============================================================
 
-  // GET /api/village
-
-  // GET /api/village
-  static Future<List<dynamic>> getVillages() async {
+  static Future<Map<String, dynamic>> getProfile() async {
     final response = await _request(
       'GET',
-      '/api/village',
-      authenticated: true, // Send JWT token
-    );
-
-    dynamic decoded = response;
-
-    if (decoded is String) {
-      decoded = jsonDecode(decoded);
-    }
-
-    // Handle either a direct List or a Map containing the village list.
-    if (decoded is Map) {
-      decoded = decoded['LIST OF ALL VILLAGE :'];
-    }
-
-    if (decoded is List) {
-      return decoded;
-    }
-
-    throw Exception('Invalid village response: ${decoded.runtimeType}');
-  }
-
-  // GET /api/village/{id}
-  static Future<dynamic> getVillageById(int id) async {
-    return _request('GET', '/api/village/$id');
-  }
-
-  // POST /api/village
-  static Future<dynamic> addVillage({
-    required String name,
-    required String pinCode,
-  }) async {
-    return _request(
-      'POST',
-      '/api/village',
-      body: {'name': name, 'pinCode': pinCode},
+      '/api/auth/profile',
       authenticated: true,
     );
+
+    return _asMap(response);
   }
 
-  // PUT /api/village/{id}
-  static Future<dynamic> updateVillage(
-    int id, {
-    required Map<String, dynamic> body,
+  static Future<Map<String, dynamic>> updateProfile({
+    required String userName,
+    required String phoneNumber,
   }) async {
-    return _request('PUT', '/api/village/$id', body: body, authenticated: true);
-  }
+    final response = await _request(
+      'PUT',
+      '/api/auth/profile',
+      body: {
+        'userName': userName,
+        'phoneNumber': phoneNumber,
+      },
+      authenticated: true,
+    );
 
-  // DELETE /api/village/{id}
-  static Future<dynamic> deleteVillage(int id) async {
-    return _request('DELETE', '/api/village/$id', authenticated: true);
+    return _asMap(response);
   }
 
   // ============================================================
   // REGION
+  // User -> Region -> Farm
+  // No Village API or villageId.
   // ============================================================
 
-  // GET /api/region
   static Future<List<dynamic>> getRegions() async {
-    return _asList(await _request('GET', '/api/region', authenticated: true));
-  }
-
-  // GET /api/region/{id}
-  static Future<dynamic> getRegionById(int id) async {
-    return _request('GET', '/api/region/$id');
-  }
-
-  // POST /api/region
-  static Future<Map<String, dynamic>> addRegion({
-    required String name,
-    required int villageId,
-  }) async {
-    return _asMap(
+    return _asList(
       await _request(
-        'POST',
+        'GET',
         '/api/region',
-        body: {'name': name, 'villageId': villageId},
         authenticated: true,
       ),
     );
   }
 
-  // DELETE /api/region/{id}
+  static Future<dynamic> getRegionById(int id) async {
+    return _request(
+      'GET',
+      '/api/region/$id',
+      authenticated: true,
+    );
+  }
+
+  static Future<Map<String, dynamic>> addRegion({
+    required String name,
+  }) async {
+    return _asMap(
+      await _request(
+        'POST',
+        '/api/region',
+        body: {'name': name},
+        authenticated: true,
+      ),
+    );
+  }
+
   static Future<dynamic> deleteRegion(int id) async {
-    return _request('DELETE', '/api/region/$id', authenticated: true);
+    return _request(
+      'DELETE',
+      '/api/region/$id',
+      authenticated: true,
+    );
   }
 
   // ============================================================
   // FARM
   // ============================================================
 
-  // GET /api/farm
   static Future<List<dynamic>> getFarms() async {
-    return _asList(await _request('GET', '/api/farm', authenticated: true));
+    return _asList(
+      await _request(
+        'GET',
+        '/api/farm',
+        authenticated: true,
+      ),
+    );
   }
 
-  // GET /api/farm/{id}
   static Future<dynamic> getFarmById(int id) async {
-    return _request('GET', '/api/farm/$id');
+    return _request(
+      'GET',
+      '/api/farm/$id',
+      authenticated: true,
+    );
   }
 
-  // POST /api/farm
   static Future<Map<String, dynamic>> addFarm({
     required String name,
     required double area,
@@ -387,36 +530,49 @@ class ApiService {
       await _request(
         'POST',
         '/api/farm',
-        body: {'name': name, 'area': area, 'regionId': regionId},
+        body: {
+          'name': name,
+          'area': area,
+          'regionId': regionId,
+        },
         authenticated: true,
       ),
     );
   }
 
-  // DELETE /api/farm/{id}
   static Future<dynamic> deleteFarm(int id) async {
-    return _request('DELETE', '/api/farm/$id', authenticated: true);
+    return _request(
+      'DELETE',
+      '/api/farm/$id',
+      authenticated: true,
+    );
   }
 
   // ============================================================
   // CROP CYCLE
   // ============================================================
 
-  // GET /api/cropcycle/farm/{farmId}
   static Future<List<dynamic>> getCropCyclesByFarm(int farmId) async {
     return _asList(
-      await _request('GET', '/api/cropcycle/farm/$farmId', authenticated: true),
+      await _request(
+        'GET',
+        '/api/cropcycle/farm/$farmId',
+        authenticated: true,
+      ),
     );
   }
 
-  // POST /api/cropcycle
   static Future<dynamic> addCropCycle({
     required Map<String, dynamic> body,
   }) async {
-    return _request('POST', '/api/cropcycle', body: body, authenticated: true);
+    return _request(
+      'POST',
+      '/api/cropcycle',
+      body: body,
+      authenticated: true,
+    );
   }
 
-  // PUT /api/cropcycle/{id}/complete
   static Future<dynamic> completeCropCycle(
     int id, {
     required String endDate,
@@ -433,61 +589,89 @@ class ApiService {
   // AGRO EXPENSE
   // ============================================================
 
-  // GET /api/agro
   static Future<List<dynamic>> getAgroExpenses() async {
-    return _asList(await _request('GET', '/api/agro', authenticated: true));
+    return _asList(
+      await _request(
+        'GET',
+        '/api/agro',
+        authenticated: true,
+      ),
+    );
   }
 
-  // GET /api/agro/{id}
   static Future<dynamic> getAgroExpenseById(int id) async {
-    return _request('GET', '/api/agro/$id', authenticated: true);
+    return _request(
+      'GET',
+      '/api/agro/$id',
+      authenticated: true,
+    );
   }
 
-  // POST /api/agro
   static Future<dynamic> addAgroExpense({
     required Map<String, dynamic> body,
   }) async {
-    return _request('POST', '/api/agro', body: body, authenticated: true);
+    return _request(
+      'POST',
+      '/api/agro',
+      body: body,
+      authenticated: true,
+    );
   }
 
-  // PUT /api/agro/{id}
   static Future<dynamic> updateAgroExpense(
     int id, {
     required Map<String, dynamic> body,
   }) async {
-    return _request('PUT', '/api/agro/$id', body: body, authenticated: true);
+    return _request(
+      'PUT',
+      '/api/agro/$id',
+      body: body,
+      authenticated: true,
+    );
   }
 
-  // PATCH /api/agro/{id}
   static Future<dynamic> patchAgroExpense(
     int id, {
     required Map<String, dynamic> body,
   }) async {
-    return _request('PATCH', '/api/agro/$id', body: body, authenticated: true);
+    return _request(
+      'PATCH',
+      '/api/agro/$id',
+      body: body,
+      authenticated: true,
+    );
   }
 
-  // DELETE /api/agro/{id}
   static Future<dynamic> deleteAgroExpense(int id) async {
-    return _request('DELETE', '/api/agro/$id', authenticated: true);
+    return _request(
+      'DELETE',
+      '/api/agro/$id',
+      authenticated: true,
+    );
   }
 
   // ============================================================
   // FARM EXPENSE
   // ============================================================
 
-  // GET /api/farm_expense
   static Future<List<dynamic>> getFarmExpenses() async {
     return _asList(
-      await _request('GET', '/api/farm_expense', authenticated: true),
+      await _request(
+        'GET',
+        '/api/farm_expense',
+        authenticated: true,
+      ),
     );
   }
 
-  // GET /api/farm_expense/{id}
   static Future<dynamic> getFarmExpenseById(int id) async {
-    return _request('GET', '/api/farm_expense/$id', authenticated: true);
+    return _request(
+      'GET',
+      '/api/farm_expense/$id',
+      authenticated: true,
+    );
   }
 
-  // POST /api/farm_expense
   static Future<dynamic> addFarmExpense({
     required Map<String, dynamic> body,
   }) async {
@@ -499,7 +683,6 @@ class ApiService {
     );
   }
 
-  // PUT /api/farm_expense/{id}
   static Future<dynamic> updateFarmExpense(
     int id, {
     required Map<String, dynamic> body,
@@ -512,7 +695,6 @@ class ApiService {
     );
   }
 
-  // PATCH /api/farm_expense/{id}
   static Future<dynamic> patchFarmExpense(
     int id, {
     required Map<String, dynamic> body,
@@ -525,12 +707,18 @@ class ApiService {
     );
   }
 
-  // DELETE /api/farm_expense/{id}
   static Future<dynamic> deleteFarmExpense(int id) async {
-    return _request('DELETE', '/api/farm_expense/$id', authenticated: true);
+    return _request(
+      'DELETE',
+      '/api/farm_expense/$id',
+      authenticated: true,
+    );
   }
 
-  // total farmExpense
+  // ============================================================
+  // SEARCH FARM EXPENSES
+  // ============================================================
+
   Future<Map<String, dynamic>> searchFarmExpenses({
     required String cropName,
     required int year,
@@ -556,6 +744,10 @@ class ApiService {
 
     if (response is Map<String, dynamic>) {
       return response;
+    }
+
+    if (response is Map) {
+      return Map<String, dynamic>.from(response);
     }
 
     throw Exception('Invalid expense response from server');

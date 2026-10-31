@@ -20,5 +20,7 @@ public class FarmDTO {
 
     private Long regionId;
 
+    private Long userId;
+
 
 }

@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'Login_page.dart';
+import 'home_page.dart';
+import 'services/api_service.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -20,30 +22,46 @@ class _WelcomePageState extends State<WelcomePage> {
   void initState() {
     super.initState();
 
-    // Automatically open the login page after 5 seconds.
-    _welcomeTimer = Timer(const Duration(seconds: 5), () {
-      _openLoginPage();
-    });
+    // Keep the welcome screen visible for 5 seconds.
+    _welcomeTimer = Timer(
+      const Duration(seconds: 2),
+      _checkSessionAndNavigate,
+    );
   }
 
-  void _openLoginPage() {
-    // Prevent the timer and button from navigating twice.
+  Future<void> _checkSessionAndNavigate() async {
     if (!mounted || _hasNavigated) return;
 
+    // Prevent multiple navigation attempts.
     _hasNavigated = true;
     _welcomeTimer?.cancel();
+
+    bool sessionRestored = false;
+
+    try {
+      // Check the saved refresh token with the backend.
+      sessionRestored = await ApiService.restoreSession();
+    } catch (e) {
+      debugPrint('Session restoration failed: $e');
+    }
+
+    if (!mounted) return;
+
+    // Open Home only if the backend successfully refreshed the session.
+    final Widget nextPage = sessionRestored
+        ? HomePage()
+        : const LoginPage();
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const LoginPage(),
+        builder: (_) => nextPage,
       ),
     );
   }
 
   @override
   void dispose() {
-    // Cancel the timer if this page is removed.
     _welcomeTimer?.cancel();
     super.dispose();
   }
@@ -75,7 +93,7 @@ class _WelcomePageState extends State<WelcomePage> {
             },
           ),
 
-          // Dark gradient for button visibility.
+          // Dark gradient for visibility.
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -90,9 +108,6 @@ class _WelcomePageState extends State<WelcomePage> {
               ),
             ),
           ),
-
-          
-          
         ],
       ),
     );

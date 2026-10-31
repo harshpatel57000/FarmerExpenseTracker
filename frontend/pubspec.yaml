@@ -52,6 +52,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: http://dart.dev/tools/pub/pubspec
@@ -63,6 +64,18 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/images/welcome_page_image.jpg
+    - assets/images/Singup_background_image.png
+    - assets/images/Agro_expense_page_image.png
+    - assets/images/Agro_expense_icon_image.png
+    - assets/images/bag_agro_expense_icon_image.png
+    - assets/images/Add_region_image.png
+    - assets/images/Farm_expense_page_image.png
+    - assets/images/farm_night.png
+    - assets/images/farm_morning.png
+    - assets/images/farm_evening_image.png
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -94,3 +107,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see http://flutter.dev/to/font-from-package
+
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/app_icon_image.png"
+  adaptive_icon_background: "#F4F7EF"
+  adaptive_icon_foreground: "assets/images/app_icon_image.png"

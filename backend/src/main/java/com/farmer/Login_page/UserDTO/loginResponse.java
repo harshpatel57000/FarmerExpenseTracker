@@ -14,4 +14,6 @@ public class loginResponse {
     private String emailId;
     private String phoneNumber;
     private String token;
+    
+    private String refreshToken;
 }

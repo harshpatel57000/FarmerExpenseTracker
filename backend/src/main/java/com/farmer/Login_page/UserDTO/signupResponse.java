@@ -19,6 +19,7 @@ public  class signupResponse {
 
     private String phoneNumber;
 
+
     public signupResponse(User user) {
         this.id=user.getId();
         this.userName=user.getUserName();

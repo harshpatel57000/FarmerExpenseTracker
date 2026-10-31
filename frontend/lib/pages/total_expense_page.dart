@@ -323,7 +323,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: selectedYear,
+                  initialValue: selectedYear,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'વર્ષ',
@@ -341,7 +341,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: selectedCrop,
+                  initialValue: selectedCrop,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'પાક',
@@ -363,7 +363,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
 
           // Farm selection.
           DropdownButtonFormField<String>(
-            value: selectedFarmId,
+            initialValue: selectedFarmId,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'ખેતર પસંદ કરો',

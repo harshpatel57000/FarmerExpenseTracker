@@ -207,7 +207,7 @@ class _CropCyclePageState extends State<CropCyclePage> {
                     const SizedBox(height: 26),
 
                     DropdownButtonFormField<String>(
-                      value: selectedCrop,
+                      initialValue: selectedCrop,
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'પાકનો પ્રકાર',

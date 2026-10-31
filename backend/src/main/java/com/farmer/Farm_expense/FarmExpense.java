@@ -42,7 +42,7 @@ public class FarmExpense {
 
    
     @Column(name="Agroquantity",nullable=true)
-    private Double AgroQuantity;
+    private Double agroQuantity;
 
     @Column(name="total_agro_expense",nullable=true)
     private Double totalAgroExpense;

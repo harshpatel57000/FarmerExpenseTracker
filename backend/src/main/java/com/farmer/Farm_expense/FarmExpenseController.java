@@ -1,31 +1,39 @@
+
 package com.farmer.Farm_expense;
 
 import java.util.List;
 
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
-@AllArgsConstructor 
 @RestController
-@RequestMapping("/api/farm_expense") 
+@RequestMapping("/api/farm_expense")
+@RequiredArgsConstructor
 public class FarmExpenseController {
-    public final FarmExpenseService farmExpenseService;
+
+    private final FarmExpenseService farmExpenseService;
 
     @PostMapping
-    public FarmExpenseDTO saveFarmExpense(@Valid @RequestBody FarmExpenseDTO dto){
-        return farmExpenseService.saveFarmExpense(dto);
+    public FarmExpenseDTO saveFarmExpense(
+            @Valid @RequestBody FarmExpenseDTO dto) {
+        return farmExpenseService.addFarmExpense(dto);
     }
 
     @GetMapping
-    public List<FarmExpenseDTO> getFarmExpense(){
-        return farmExpenseService.getFarmExpense();
+    public List<FarmExpenseDTO> getAllFarmExpense() {
+        return farmExpenseService.getAllFarmExpense();
     }
 
     @GetMapping("/{id:\\d+}")
@@ -53,26 +61,22 @@ public class FarmExpenseController {
         farmExpenseService.deleteFarmExpense(id);
     }
 
-    // Add inside FarmExpenseController.
-
     @GetMapping("/search")
     public Page<FarmExpenseDTO> searchFarmExpenses(
-        @RequestParam String cropName,
-        @RequestParam int year,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int size,
-        @RequestParam(defaultValue = "expenseDate") String sortBy,
-        @RequestParam(defaultValue = "desc") String direction) {
+            @RequestParam String cropName,
+            @RequestParam int year,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "expenseDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
 
-    return farmExpenseService.searchFarmExpenses(
-            cropName,
-            year,
-            page,
-            size,
-            sortBy,
-            direction
-    );
+        return farmExpenseService.searchFarmExpenses(
+                cropName,
+                year,
+                page,
+                size,
+                sortBy,
+                direction
+        );
+    }
 }
-}
-
-

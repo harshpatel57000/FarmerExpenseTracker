@@ -3,6 +3,8 @@ package com.farmer.exception;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -58,9 +60,15 @@ public class GlobleExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("invalid request body");
     }
 
+    private static final Logger log =
+        LoggerFactory.getLogger(GlobleExceptionHandler.class);
+
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handlerGenericException(Exception ex){
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
-    }
+    public ResponseEntity<String> handlerGenericException(Exception ex) {
+    log.error("Unhandled backend exception", ex);
+
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
+}
 
 }

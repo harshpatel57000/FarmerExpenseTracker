@@ -1,7 +1,9 @@
 package com.farmer.Login_page.OTP;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+@AllArgsConstructor 
 @Getter 
 public class verifyOTP {
 

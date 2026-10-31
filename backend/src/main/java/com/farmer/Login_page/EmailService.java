@@ -19,9 +19,15 @@ public class EmailService {
 
     private final RestClient restClient;
 
-    public EmailService(){
-        this.restClient = RestClient.builder().baseUrl("https://api.brevo.com").build();
+    public EmailService() {
+    this(RestClient.builder().baseUrl("https://api.brevo.com") .build());
+}
+    public EmailService(RestClient restClient) {
+    this.restClient = restClient;
     }
+
+    
+
 
     public void sendOtp(String recipientEmail,String otp){
         Map<String,Object> request= Map.of("sender",
