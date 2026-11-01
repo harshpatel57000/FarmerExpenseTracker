@@ -7,7 +7,7 @@ class ApiService {
   // Physical phone: use your currently working laptop IP.
   // USB reverse: use http://127.0.0.1:8081 and run:
   // adb reverse tcp:8081 tcp:8081
-  static const String baseUrl = 'http://10.244.72.152:8081';
+static const String baseUrl = 'https://farmexpenseapp.duckdns.org';
 
   static const String _tokenKey = 'jwt_token';
   static const String _refreshTokenKey = 'refresh_token';

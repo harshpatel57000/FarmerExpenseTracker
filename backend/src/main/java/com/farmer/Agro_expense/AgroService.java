@@ -2,6 +2,8 @@ package com.farmer.Agro_expense;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.farmer.Agro_expense.enumValue.ValueUnit;
@@ -18,10 +20,27 @@ public class AgroService {
 
 private final AgroRepository agroRepository;
 private final UserRepository userRepository;
+
+
+    private User getLoggedInUser(){
+        Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || authentication.getName().equals("anonymousUser")) {
+            throw new ErrorException("User is not authenticated");
+        }
+
+
+        return userRepository.findByEmailId(authentication.getName()).orElseThrow(() -> new ErrorException("User Not Found-AgroExpense"));
+
+    }
  
 //POST
     public AgroDTO addAgro(AgroDTO dto) {
-        User user=userRepository.findById(dto.getUserId()).orElseThrow(()-> new ErrorException("user not Found"));
+
+        User user = getLoggedInUser();
 
         Agro agro = AgroMapper.toEntity(dto,user);
 
@@ -43,14 +62,20 @@ private final UserRepository userRepository;
     }
 // GET ALL
     public List<AgroDTO> getAllAgro() {
+        
+        User user = getLoggedInUser();
 
-        List<Agro> agroList = agroRepository.findAll();
+        List<Agro> agroList = agroRepository.findByUserId(user.getId());
 
         return agroList.stream().map(AgroMapper::toDTO).toList();
    }
 
    //GET BY ID
    public AgroDTO getAgroById(long id){
+
+        User user = getLoggedInUser();
+
+        agroRepository.findByIdAndUserId(id,user.getId());
         Agro agro=agroRepository.findById(id).orElseThrow(() ->new ErrorException("Agro excepense not found!"));
         return AgroMapper.toDTO(agro);
    }

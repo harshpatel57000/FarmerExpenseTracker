@@ -66,7 +66,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/welcome_page_image.jpg
-    - assets/images/Singup_background_image.png
     - assets/images/Agro_expense_page_image.png
     - assets/images/Agro_expense_icon_image.png
     - assets/images/bag_agro_expense_icon_image.png
@@ -75,7 +74,14 @@ flutter:
     - assets/images/farm_night.png
     - assets/images/farm_morning.png
     - assets/images/farm_evening_image.png
-
+    - assets/images/Singup_background_image.png
+    - assets/images/farmExpense_icon.png
+    - assets/images/total_expense_icon.png
+    - assets/images/expense_view_icon.png
+    - assets/images/agroExpense_icon.png
+    - assets/images/addFarm_icon.png 
+    - assets/images/crop_expense_slide_icon.png
+    - assets/images/agro_expense_slide_icon.png   
 
   # To add assets to your application, add an assets section, like this:
   # assets:
