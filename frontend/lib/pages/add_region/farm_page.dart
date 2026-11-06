@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/pages/services/api_service.dart';
 
 const String farmBackgroundImage =
-    'assets/images/Add_region_image.png';
+    'assets/images/Add_region_image.jpg';
 
 const Color farmPrimaryGreen = Color(0xFF276555);
 const Color farmDarkGreen = Color(0xFF164638);

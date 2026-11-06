@@ -21,6 +21,7 @@ public class FarmExpenseMapper {
                 .ExtraCost(dto.getExtraCost())
                 .expenseDate(dto.getExpenseDate())
                 .totalCost(dto.getTotalCost())
+                .extraNote(dto.getExtraNote())
                 .build();
     }
 
@@ -40,6 +41,7 @@ public class FarmExpenseMapper {
                 .extraCost(entity.getExtraCost())
                 .expenseDate(entity.getExpenseDate())
                 .totalCost(entity.getTotalCost())
+                .extraNote(entity.getExtraNote())   
                 .build();
     }
 }

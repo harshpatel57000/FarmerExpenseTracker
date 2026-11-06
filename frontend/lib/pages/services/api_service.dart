@@ -562,6 +562,38 @@ static const String baseUrl = 'https://farmexpenseapp.duckdns.org';
     );
   }
 
+  /// Fetch crop cycles for the farms returned by the authenticated farm API.
+  /// Adds client-only farm metadata so the existing farm filter can be applied.
+  static Future<List<Map<String, dynamic>>> getUserCropCycles(
+    List<Map<String, dynamic>> farms,
+  ) async {
+    final perFarmCycles = await Future.wait(
+      farms.map((farm) async {
+        final rawFarmId = farm['id'] ?? farm['farmId'];
+        final farmId = rawFarmId is num
+            ? rawFarmId.toInt()
+            : int.tryParse(rawFarmId?.toString() ?? '');
+        if (farmId == null) return <Map<String, dynamic>>[];
+
+        final cycles = await getCropCyclesByFarm(farmId);
+        return cycles.whereType<Map>().map((cycleData) {
+          return <String, dynamic>{
+            ...Map<String, dynamic>.from(cycleData),
+            '_farmId': farmId.toString(),
+            '_farmName': farm['name']?.toString() ?? 'ખેતર',
+          };
+        }).where((cycle) {
+          final status = cycle['status']?.toString().trim().toUpperCase();
+          return status == 'ACTIVE' ||
+              status == 'COMPLETED' ||
+              status == 'COMPLETE';
+        }).toList();
+      }),
+    );
+
+    return perFarmCycles.expand((cycles) => cycles).toList();
+  }
+
   static Future<dynamic> addCropCycle({
     required Map<String, dynamic> body,
   }) async {

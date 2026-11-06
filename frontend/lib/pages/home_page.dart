@@ -66,13 +66,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final hour = DateTime.now().hour;
 
     if (hour >= 5 && hour < 11) {
-      return 'assets/images/farm_morning.png';
+      return 'assets/images/farm_morning.jpg';
     } else if (hour >= 11 && hour < 16) {
-      return 'assets/images/Singup_background_image.png';
+      return 'assets/images/Singup_background_image.jpg';
     } else if (hour >= 16 && hour < 19) {
-      return 'assets/images/farm_evening_image.png';
+      return 'assets/images/farm_evening_image.jpg';
     } else {
-      return 'assets/images/farm_night.png';
+      return 'assets/images/farm_night.jpg';
     }
   }
 
@@ -153,10 +153,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     });
 
     try {
-      // STEP 1: Get all farms of the logged-in user.
       final farms = await ApiService.getFarms();
 
-      // STEP 2: Get crop cycles for every farm.
       final Set<int> activeCropCycleIds = {};
 
       final cycleResults = await Future.wait(
@@ -175,7 +173,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }),
       );
 
-      // STEP 3: Collect IDs of ACTIVE crop cycles.
       for (final cycles in cycleResults) {
         for (final cycleData in cycles) {
           final cycle = _toMap(cycleData);
@@ -190,12 +187,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       }
 
-      // STEP 4: Get all farm expenses for this user.
       final farmExpenses = await ApiService.getFarmExpenses();
 
       double activeCropTotal = 0.0;
 
-      // STEP 5: Sum expenses belonging to ACTIVE cycles only.
       for (final expenseData in farmExpenses) {
         final expense = _toMap(expenseData);
 
@@ -210,12 +205,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       }
 
-      // STEP 6: Get logged-in user's agro expenses.
       final agroExpenses = await ApiService.getAgroExpenses();
 
       double agroTotal = 0.0;
 
-      // STEP 7: Add totalAmount of every agro expense.
       for (final agroData in agroExpenses) {
         final agro = _toMap(agroData);
 
@@ -224,14 +217,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       }
 
-      // STEP 8: Update dashboard.
       if (!mounted) return;
 
       setState(() {
         activeCropExpenseTotal = _formatAmount(activeCropTotal);
-
         totalAgroExpense = _formatAmount(agroTotal);
-
         _isLoadingTotals = false;
         _dashboardError = null;
       });
@@ -241,7 +231,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       setState(() {
         activeCropExpenseTotal = '—';
         totalAgroExpense = '—';
-
         _isLoadingTotals = false;
         _dashboardError = 'ખર્ચની માહિતી લોડ થઈ શકી નથી';
       });
@@ -266,11 +255,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void dispose() {
     _backgroundTimer?.cancel();
     _slideTimer?.cancel();
-
     _slideController.dispose();
-
     WidgetsBinding.instance.removeObserver(this);
-
     super.dispose();
   }
 
@@ -352,74 +338,55 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                25,
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 25),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Welcome header.
                   _buildWelcome(),
-
                   const SizedBox(height: 18),
-
-                  // 2. Expense slideshow heading.
                   _buildSectionTitle(
                     'ખેતી ખર્ચની ઝલક',
                     'તમારા બધા ખેતરોના ખર્ચ',
                     Icons.analytics_outlined,
                   ),
-
                   const SizedBox(height: 12),
-
-                  // 3. Expense slideshow.
                   SizedBox(
                     height: 145,
                     child: PageView(
                       controller: _slideController,
                       onPageChanged: (index) {
                         if (!mounted) return;
-
                         setState(() {
                           _currentSlide = index;
                         });
                       },
                       children: [
-                        // Slide 1: Active crop expense.
                         _buildExpenseSlide(
                           title: 'ચાલુ પાકનો કુલ ખર્ચ',
                           subtitle: 'તમામ ખેતરોના ચાલુ પાકનો ખર્ચ',
                           amount: _isLoadingTotals
                               ? 'લોડ થઈ રહ્યું છે...'
                               : activeCropExpenseTotal,
-                          imagePath: 'assets/images/crop_expense_slide_icon.png',
+                          imagePath: 'assets/images/crop_exprop_expense_slide_icon.jpg',
                           fallbackIcon: Icons.grass,
-                          color: Colors.green,
+                          color: Colors.green.shade700,
                           slideNumber: '01 / 02',
                         ),
-
-                        // Slide 2: Total agro expense.
                         _buildExpenseSlide(
                           title: 'કુલ કૃષિ ખરીદી ખર્ચ',
                           subtitle: 'તમારી તમામ કૃષિ ખરીદીનો ખર્ચ',
                           amount: _isLoadingTotals
                               ? 'લોડ થઈ રહ્યું છે...'
                               : totalAgroExpense,
-                          imagePath: 'assets/images/agro_expense_slide_icon.png',
+                          imagePath: 'assets/images/agro_expense_slide_icon.jpg',
                           fallbackIcon: Icons.inventory_2_outlined,
-                          color: Colors.orange,
+                          color: const Color(0xFFF07E13),
                           slideNumber: '02 / 02',
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
-                  // Slideshow indicators.
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
@@ -429,9 +396,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                          ),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
                           height: 7,
                           width: selected ? 23 : 7,
                           decoration: BoxDecoration(
@@ -444,8 +409,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       },
                     ),
                   ),
-
-                  // API error and retry button.
                   if (_dashboardError != null) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -473,19 +436,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       ],
                     ),
                   ],
-
                   const SizedBox(height: 24),
-
-                  // 4. Quick actions heading.
                   _buildSectionTitle(
                     'ઝડપી કામગીરી',
                     'તમારા ખેતીના કામ પસંદ કરો',
                     Icons.dashboard_outlined,
                   ),
-
                   const SizedBox(height: 12),
-
-                  // 5. Navigation grid.
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
@@ -494,10 +451,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     mainAxisSpacing: 12,
                     childAspectRatio: 1.38,
                     children: [
-                      // Farm expense.
                       _buildMenuCard(
                         icon: Icons.agriculture_outlined,
-                        imagePath: 'assets/images/farmExpense_icon.png',
+                        imagePath: 'assets/images/farmExpense_icon.jpg',
                         title: 'ખેતરનો ખર્ચ',
                         subtitle: 'ખેતરમાં થયેલો ખર્ચ નોંધો',
                         color: Colors.green,
@@ -505,11 +461,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           _navigate(const SelectFarmPage());
                         },
                       ),
-
-                      // Agro expense.
                       _buildMenuCard(
                         icon: Icons.inventory_2_outlined,
-                        imagePath: 'assets/images/agroExpense_icon.png',
+                        imagePath: 'assets/images/agroExpense_icon.jpg',
                         title: 'ખરીદીનો ખર્ચ',
                         subtitle: 'ખાતર, દવા અને અન્ય વસ્તુઓ',
                         color: Colors.orange,
@@ -534,11 +488,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           );
                         },
                       ),
-
-                      // Add farm.
                       _buildMenuCard(
                         icon: Icons.add_business_outlined,
-                        imagePath: 'assets/images/addFarm_icon.png',
+                        imagePath: 'assets/images/addFarm_icon.jpg',
                         title: 'ખેતર ઉમેરો',
                         subtitle: 'નવો વિસ્તાર અથવા ખેતર ઉમેરો',
                         color: Colors.blue,
@@ -546,11 +498,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           _navigate(const AddRegionPage());
                         },
                       ),
-
-                      // Total expense.
                       _buildMenuCard(
                         icon: Icons.bar_chart_outlined,
-                        imagePath: 'assets/images/total_expense_icon.png',
+                        imagePath: 'assets/images/total_expense_icon.jpg',
                         title: 'કુલ ખર્ચ',
                         subtitle: 'વિસ્તાર અને ખેતર પ્રમાણે',
                         color: Colors.purple,
@@ -560,22 +510,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 12),
-
-                  // Expense analysis.
                   _buildWideMenuCard(
                     icon: Icons.pie_chart_outline,
-                    imagePath: 'assets/images/expense_view_icon.png',
+                    imagePath: 'assets/images/expense_view_icon.jpg',
                     title: 'ખર્ચનું વિશ્લેષણ',
                     subtitle: 'ચાર્ટ અને વિગતવાર ખર્ચ જુઓ',
                     onTap: () {
                       _navigate(const ExpenseViewPage());
                     },
                   ),
-
                   const SizedBox(height: 20),
-
                   Center(
                     child: Text(
                       'તમારી ખેતી, તમારો હિસાબ 🌱',
@@ -601,16 +546,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _buildWelcome() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 11,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.green.shade200,
-        ),
+        border: Border.all(color: Colors.green.shade200),
       ),
       child: Row(
         children: [
@@ -691,7 +631,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   // --------------------------------------------------
-  // EXPENSE SLIDESHOW CARD (USES ASSET IMAGES)
+  // EXPENSE SLIDESHOW CARD (SCALED ICON TO REMOVE SPACE)
   // --------------------------------------------------
 
   Widget _buildExpenseSlide({
@@ -700,9 +640,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     required String amount,
     required String imagePath,
     required IconData fallbackIcon,
-    required MaterialColor color,
+    required Color color,
     required String slideNumber,
   }) {
+    final hsl = HSLColor.fromColor(color);
+    final darkColor =
+        hsl.withLightness((hsl.lightness - 0.08).clamp(0.0, 1.0)).toColor();
+    final lightColor =
+        hsl.withLightness((hsl.lightness + 0.08).clamp(0.0, 1.0)).toColor();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.all(18),
@@ -711,8 +657,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.shade800,
-            color.shade600,
+            darkColor,
+            lightColor,
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -776,7 +722,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
           const SizedBox(width: 8),
 
-          // Slide Icon Box displaying the custom assets with fallback
+          // Scaled image container without inner gap/whitespace
           Container(
             height: 65,
             width: 65,
@@ -793,18 +739,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) {
-                  return Center(
-                    child: Icon(
-                      fallbackIcon,
-                      color: color.shade800,
-                      size: 34,
-                    ),
-                  );
-                },
+              child: Transform.scale(
+                scale: 1.35, // Zooms in to crop transparent outer padding
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) {
+                    return Center(
+                      child: Icon(
+                        fallbackIcon,
+                        color: color,
+                        size: 34,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -849,9 +798,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 imagePath: imagePath,
                 color: color,
               ),
-
               const SizedBox(height: 10),
-
               Text(
                 title,
                 maxLines: 1,
@@ -862,9 +809,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   color: Color(0xFF26382C),
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 subtitle,
                 maxLines: 2,
@@ -949,9 +894,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 imagePath: imagePath,
                 color: Colors.green,
               ),
-
               const SizedBox(width: 13),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,7 +917,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-
               Icon(
                 Icons.arrow_forward_ios,
                 color: Colors.green.shade800,

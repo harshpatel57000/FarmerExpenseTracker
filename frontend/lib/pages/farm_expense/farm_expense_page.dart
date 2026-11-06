@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/farm_expense/farm_crop_expense_list_page.dart';
 import '../services/api_service.dart';
@@ -23,7 +22,7 @@ class FarmExpensePage extends StatefulWidget {
 
 class _FarmExpensePageState extends State<FarmExpensePage> {
   static const String backgroundImage =
-      'assets/images/Farm_expense_page_image.png';
+      'assets/images/Farm_expense_page_image.jpg';
 
   String selectedExpenseType = 'Normal Expense';
   bool isSavingExpense = false;
@@ -32,17 +31,21 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
   String? activeCropName;
   bool isLoadingCropCycle = true;
 
+  // Normal Expense Controllers
   final expenseNameController = TextEditingController();
   final normalLabourNumberController = TextEditingController();
   final normalLabourAmountController = TextEditingController();
   final normalExtraAmountController = TextEditingController();
+  final normalNoteController = TextEditingController();
 
+  // Agro Expense Controllers
   final agroProductNameController = TextEditingController();
   final agroQuantityController = TextEditingController();
   final agroTotalAmountController = TextEditingController();
   final agroLabourNumberController = TextEditingController();
   final agroLabourAmountController = TextEditingController();
   final agroExtraAmountController = TextEditingController();
+  final agroNoteController = TextEditingController();
 
   double normalLabourTotal = 0;
   double normalExtraTotal = 0;
@@ -55,69 +58,171 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
 
   DateTime selectedDate = DateTime.now();
 
+  // Crop-wise labour expense lists
+  static const Map<String, List<String>> _cropExpenseOptions = {
+    'ડાંગર': [
+      'ખેડ કરવો (Puddling)',
+      'ટ્રેક્ટર ખેડ',
+      'ટ્રેક્ટર ડીઝલ ખર્ચ',
+      'ટ્રેક્ટર ફેરો',
+      'સાફ કરવા',
+      'ધરૂ ઉછેર / ધરુવાડિયું',
+      'ધરૂ ઉપાડવું',
+      'રોપણી મજૂરી (Transplantation)',
+      'નિંદામણ (Weeding)',
+      'ખાતર નાખવું',
+      'દવાનો છંટકાવ',
+      'પાણી વાળવું',
+      'કાપણી ',
+      'પૂળા બાંધવા',
+      'ડાંગર કાઢવાની મજૂરી',
+      'ચડાવવું-ઉતારવું / વહન',
+      'ડાંગર વેચવા જવાનો વેચવા'
+    ],
+    'ઘઉં': [
+      'જમીન તૈયારી ',
+      'ટ્રેક્ટર ખેડ',
+      'ટ્રેક્ટર ડીઝલ ખર્ચ',
+      'ટ્રેક્ટર ફેરો',
+      'ક્યારા / પાળા બાંધવા',
+      'વાવણી મજૂરી',
+      'પાણી વાળવું',
+      'નિંદામણ',
+      'ખાતર આપવું',
+      'દવાનો છંટકાવ',
+      'દાતરડેથી કાપણી',
+      'પૂળા બાંધવા',
+      'થ્રેશિંગ / દાણા કાઢવા',
+      'ગુણી ભરવી / વજન કરવું',
+      'ઘઉં વેચવા જવાનો ખર્ચ',
+    ],
+    'બાજરી': [
+      'ટ્રેક્ટર ખેડ',
+      'ટ્રેક્ટર ડીઝલ ખર્ચ',
+      'ટ્રેક્ટર ફેરો',     
+      'વાવણી / રોપણી',
+      'પારવણી કરવી (Thinning)',
+      'નિંદામણ',
+      'ખાતર નાખવું',
+      'પાણી વાળવું',
+      'પક્ષી રક્ષણ મજૂરી',
+      'ડુંડા લણવા / કાપવા',
+      'કડબ કાપવી',
+      'થ્રેશિંગ / દાણા કાઢવા',
+      'પૂરા ભારા બાંધવા',
+      'ગુણી ભરવી ',
+    ],
+    'તમાકુ': [
+      'ટ્રેક્ટર ખેડ',
+      'ટ્રેક્ટર ડીઝલ ખર્ચ',
+      'ટ્રેક્ટર ફેરો',
+      'ધરૂ ઉછેર ',
+      'ધરૂ ઉપાડવું',
+      'રોપણી મજૂરી',
+      'ખેડ (Intercultivation)',
+      'નિંદામણ',
+      'ડોકા કટીંગ કાપવું (Topping)',
+      'પીલા કાઢવા (Desuckering)',
+      'ખાતર આપવું',
+      'પિયત વાળવું',
+      'દવાનો છંટકાવ',
+      'પાન તોડવા / કાપણી',
+      'સૂકવણી / પાથરવા-પલટાવવા',
+      'વર્ગીકરણ',
+      'પાન બાંધવા',
+      'ગુણી ભરવી ',
+      'તમાકુ વેચવા જવાનો ખર્ચ',
+    ],
+  };
+
   @override
   void initState() {
     super.initState();
     loadFarmCropCycle();
   }
 
+  List<String> get currentCropExpenseList {
+    final crop = (activeCropName ?? widget.cropType).trim();
+
+    if (crop.contains('ડાંગર') ||
+        crop.toLowerCase().contains('paddy') ||
+        crop.toLowerCase().contains('rice')) {
+      return _cropExpenseOptions['ડાંગર']!;
+    }
+    if (crop.contains('ઘઉં') || crop.toLowerCase().contains('wheat')) {
+      return _cropExpenseOptions['ઘઉં']!;
+    }
+    if (crop.contains('બાજરી') ||
+        crop.toLowerCase().contains('bajra') ||
+        crop.toLowerCase().contains('millet')) {
+      return _cropExpenseOptions['બાજરી']!;
+    }
+    if (crop.contains('તમાકુ') || crop.toLowerCase().contains('tobacco')) {
+      return _cropExpenseOptions['તમાકુ']!;
+    }
+
+    return [
+      'ખેડ / જમીન તૈયારી',
+      'વાવણી / રોપણી',
+      'નિંદામણ ',
+      'ખાતર નાખવું',
+      'દવાનો છંટકાવ',
+      'પાણી વાળવું',
+      'કાપણી / લણણી',
+    ];
+  }
+
   Future<void> loadFarmCropCycle() async {
+    int? loadedCropCycleId;
+    String? loadedCropName;
+    String? userMessage;
+
     try {
-      final cycles =
-          await ApiService.getCropCyclesByFarm(widget.farmId);
+      final cycles = await ApiService.getCropCyclesByFarm(widget.farmId);
 
       final activeCycles = cycles.where((item) {
         if (item is! Map) return false;
-        return item['status']?.toString().trim().toUpperCase() ==
-            'ACTIVE';
+        return item['status']?.toString().trim().toUpperCase() == 'ACTIVE';
       }).toList();
 
       if (activeCycles.isEmpty) {
-        throw Exception(
-          'No active crop found. Please add or activate a crop cycle.',
-        );
+        userMessage =
+            'આ ખેતર માટે હાલમાં ચાલુ પાક નથી. ખર્ચ ઉમેરવા માટે પહેલાં પાક ચક્ર ઉમેરો અથવા તેને ચાલુ કરો.';
+      } else if (activeCycles.length > 1) {
+        userMessage =
+            'આ ખેતરમાં એકથી વધુ પાક ચાલુ છે. કૃપા કરીને માત્ર એક પાક ચક્ર ચાલુ રાખો.';
+      } else {
+        final cycle = Map<String, dynamic>.from(activeCycles.first as Map);
+        final rawId = cycle['id'] ?? cycle['cropCycleId'];
+        final id = rawId is num
+            ? rawId.toInt()
+            : int.tryParse(rawId?.toString() ?? '');
+        final cropName = cycle['cropName']?.toString().trim();
+
+        if (id == null || cropName == null || cropName.isEmpty) {
+          userMessage =
+              'પાકની માહિતી અધૂરી છે. કૃપા કરીને પાક ચક્ર તપાસો અને ફરી પ્રયાસ કરો.';
+        } else {
+          loadedCropCycleId = id;
+          loadedCropName = cropName;
+        }
       }
+    } catch (error, stackTrace) {
+      debugPrint('Could not load crop cycle: $error\n$stackTrace');
+      userMessage =
+          'પાકની માહિતી લાવી શકાઈ નથી. ઇન્ટરનેટ તપાસો અને ફરી પ્રયાસ કરો.';
+    }
 
-      if (activeCycles.length > 1) {
-        throw Exception(
-          'Multiple active crop cycles found. Only one should be active.',
-        );
-      }
+    if (!mounted) return;
 
-      final cycle =
-          Map<String, dynamic>.from(activeCycles.first as Map);
+    setState(() {
+      cropCycleId = loadedCropCycleId;
+      activeCropName = loadedCropName;
+      isLoadingCropCycle = false;
+    });
 
-      final rawId = cycle['id'] ?? cycle['cropCycleId'];
-      final id = rawId is num
-          ? rawId.toInt()
-          : int.tryParse(rawId?.toString() ?? '');
-
-      final cropName = cycle['cropName']?.toString().trim();
-
-      if (id == null || cropName == null || cropName.isEmpty) {
-        throw Exception('Crop cycle information is incomplete.');
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        cropCycleId = id;
-        activeCropName = cropName;
-        isLoadingCropCycle = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        cropCycleId = null;
-        activeCropName = null;
-        isLoadingCropCycle = false;
-      });
-
-      _showMessage(
-        'Could not load crop cycle: $error',
-        isError: true,
-      );
+    if (userMessage != null) {
+      _showMessage(userMessage, isError: true);
     }
   }
 
@@ -178,6 +283,8 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
         content: Text(message),
         backgroundColor:
             isError ? Colors.red.shade700 : Colors.green.shade700,
+        duration: Duration(seconds: isError ? 7 : 3),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -187,13 +294,16 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
 
   bool _checkCropCycleReady() {
     if (isLoadingCropCycle) {
-      _showMessage('Please wait while the crop loads.', isError: true);
+      _showMessage(
+        'પાકની માહિતી લોડ થઈ રહી છે. કૃપા કરીને થોડીવાર રાહ જુઓ.',
+        isError: true,
+      );
       return false;
     }
 
     if (cropCycleId == null) {
       _showMessage(
-        'This farm has no active crop cycle.',
+        'આ ખેતર માટે ચાલુ પાક ચક્ર મળ્યું નથી. ખર્ચ ઉમેરવા માટે પહેલાં પાક ચક્ર ઉમેરો અથવા ચાલુ કરો.',
         isError: true,
       );
       return false;
@@ -209,14 +319,15 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
     final workers = _number(normalLabourNumberController);
     final workerPrice = _number(normalLabourAmountController);
     final extra = _number(normalExtraAmountController);
+    final note = normalNoteController.text.trim();
 
     if (name.isEmpty) {
-      _showMessage('Please enter expense name.', isError: true);
+      _showMessage('ખર્ચનું નામ પસંદ કરો અથવા લખો.', isError: true);
       return;
     }
 
     if (_hasNegativeValues([workers, workerPrice, extra])) {
-      _showMessage('Amounts cannot be negative.', isError: true);
+      _showMessage('રકમ શૂન્યથી ઓછી ન હોઈ શકે.', isError: true);
       return;
     }
 
@@ -236,6 +347,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       'extraCost': extra,
       'expenseDate': apiDate,
       'totalCost': total,
+      'note': note,
     };
 
     setState(() => isSavingExpense = true);
@@ -244,20 +356,21 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       await ApiService.addFarmExpense(body: body);
       if (!mounted) return;
 
-      _showMessage('Normal expense saved successfully.');
+      _showMessage('સામાન્ય ખર્ચ સફળતાપૂર્વક સાચવાયો.');
       expenseNameController.clear();
       normalLabourNumberController.clear();
       normalLabourAmountController.clear();
       normalExtraAmountController.clear();
+      normalNoteController.clear();
 
       setState(() {
         normalLabourTotal = 0;
         normalExtraTotal = 0;
         normalTotalExpense = 0;
       });
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
-        _showMessage('Could not save expense: $error', isError: true);
+        _showMessage('ખર્ચ સાચવી શકાયો નથી. ફરી પ્રયાસ કરો.', isError: true);
       }
     } finally {
       if (mounted) setState(() => isSavingExpense = false);
@@ -273,14 +386,15 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
     final workers = _number(agroLabourNumberController);
     final workerPrice = _number(agroLabourAmountController);
     final extra = _number(agroExtraAmountController);
+    final note = agroNoteController.text.trim();
 
     if (name.isEmpty) {
-      _showMessage('Please enter agro product name.', isError: true);
+      _showMessage('કૃષિ સામગ્રીનું નામ લખો.', isError: true);
       return;
     }
 
     if (quantity <= 0) {
-      _showMessage('Quantity must be greater than zero.', isError: true);
+      _showMessage('જથ્થો શૂન્યથી વધુ હોવો જોઈએ.', isError: true);
       return;
     }
 
@@ -290,7 +404,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       workerPrice,
       extra,
     ])) {
-      _showMessage('Amounts cannot be negative.', isError: true);
+      _showMessage('રકમ શૂન્યથી ઓછી ન હોઈ શકે.', isError: true);
       return;
     }
 
@@ -310,6 +424,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       'extraCost': extra,
       'expenseDate': apiDate,
       'totalCost': total,
+      'note': note,
     };
 
     setState(() {
@@ -324,7 +439,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       await ApiService.addFarmExpense(body: body);
       if (!mounted) return;
 
-      _showMessage('Agro expense saved successfully.');
+      _showMessage('કૃષિ ખર્ચ સફળતાપૂર્વક સાચવાયો.');
 
       agroProductNameController.clear();
       agroQuantityController.clear();
@@ -332,6 +447,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       agroLabourNumberController.clear();
       agroLabourAmountController.clear();
       agroExtraAmountController.clear();
+      agroNoteController.clear();
 
       setState(() {
         agroProductTotal = 0;
@@ -339,10 +455,10 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
         agroExtraTotal = 0;
         agroTotalExpense = 0;
       });
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
         _showMessage(
-          'Could not save agro expense: $error',
+          'કૃષિ ખર્ચ સાચવી શકાયો નથી. ફરી પ્રયાસ કરો.',
           isError: true,
         );
       }
@@ -352,9 +468,17 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
   }
 
   void _openCropExpenseList() {
-    if (isLoadingCropCycle || cropCycleId == null) {
+    if (isLoadingCropCycle) {
       _showMessage(
-        'Please wait until the active crop has loaded.',
+        'પાકની માહિતી લોડ થઈ રહી છે. કૃપા કરીને થોડીવાર રાહ જુઓ.',
+        isError: true,
+      );
+      return;
+    }
+
+    if (cropCycleId == null) {
+      _showMessage(
+        'આ ખેતર માટે ચાલુ પાક ચક્ર મળ્યું નથી. પાકના ખર્ચ જોવા માટે પહેલાં પાક ઉમેરો અથવા ચાલુ કરો.',
         isError: true,
       );
       return;
@@ -380,12 +504,15 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
     normalLabourNumberController.dispose();
     normalLabourAmountController.dispose();
     normalExtraAmountController.dispose();
+    normalNoteController.dispose();
+
     agroProductNameController.dispose();
     agroQuantityController.dispose();
     agroTotalAmountController.dispose();
     agroLabourNumberController.dispose();
     agroLabourAmountController.dispose();
     agroExtraAmountController.dispose();
+    agroNoteController.dispose();
     super.dispose();
   }
 
@@ -417,18 +544,83 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
     );
   }
 
+  // Combined editable text field with dropdown popup icon on the right
+  Widget _editableDropdownField({
+    required TextEditingController controller,
+    required String label,
+    required List<String> items,
+  }) {
+    return TextField(
+      controller: controller,
+      style: const TextStyle(fontSize: 17, color: Colors.black87),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 16),
+        hintText: 'ટાઈપ કરો અથવા બાજુમાંથી પસંદ કરો',
+        hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade400),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 15, vertical: 17),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: BorderSide(color: Colors.grey.shade400),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: BorderSide(color: Colors.green.shade700, width: 2),
+        ),
+        suffixIcon: PopupMenuButton<String>(
+          icon: Icon(
+            Icons.arrow_drop_down_circle_outlined,
+            color: Colors.green.shade800,
+            size: 26,
+          ),
+          tooltip: 'ખર્ચ પસંદ કરો',
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          onSelected: (String value) {
+            setState(() {
+              controller.text = value;
+            });
+          },
+          itemBuilder: (BuildContext context) {
+            return items.map((String item) {
+              return PopupMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _field(
     TextEditingController controller,
     String label, {
     bool important = false,
     bool numeric = false,
+    int maxLines = 1,
     VoidCallback? onChanged,
   }) {
     return TextField(
       controller: controller,
+      maxLines: maxLines,
       keyboardType: numeric
           ? const TextInputType.numberWithOptions(decimal: true)
-          : TextInputType.text,
+          : (maxLines > 1 ? TextInputType.multiline : TextInputType.text),
       onChanged: (_) => onChanged?.call(),
       style: const TextStyle(fontSize: 17, color: Colors.black87),
       decoration: InputDecoration(
@@ -504,7 +696,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Expense Date', style: TextStyle(fontSize: 14)),
+                const Text('ખર્ચની તારીખ', style: TextStyle(fontSize: 14)),
                 Text(
                   formattedDate,
                   style: const TextStyle(
@@ -517,7 +709,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
           ),
           TextButton(
             onPressed: isSavingExpense ? null : selectDate,
-            child: const Text('Change', style: TextStyle(fontSize: 16)),
+            child: const Text('બદલો', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -541,7 +733,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
               )
             : const Icon(Icons.add_circle_outline, size: 26),
         label: Text(
-          isSavingExpense ? 'Saving...' : 'Add Expense',
+          isSavingExpense ? 'સાચવી રહ્યા છીએ...' : 'ખર્ચ ઉમેરો',
           style: const TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.bold,
@@ -563,22 +755,22 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
   Widget _expenseTypeSelector() {
     return Row(
       children: [
-        _typeButton('Normal Expense'),
+        _typeButton('Normal Expense', 'સામાન્ય ખર્ચ'),
         const SizedBox(width: 12),
-        _typeButton('Agro Expense'),
+        _typeButton('Agro Expense', 'કૃષિ ખર્ચ'),
       ],
     );
   }
 
-  Widget _typeButton(String title) {
-    final selected = selectedExpenseType == title;
+  Widget _typeButton(String value, String label) {
+    final selected = selectedExpenseType == value;
 
     return Expanded(
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: isSavingExpense
             ? null
-            : () => setState(() => selectedExpenseType = title),
+            : () => setState(() => selectedExpenseType = value),
         child: Container(
           padding: const EdgeInsets.symmetric(
             vertical: 15,
@@ -597,7 +789,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
             ),
           ),
           child: Text(
-            title,
+            label,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -624,15 +816,15 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle('Farm Information', Icons.agriculture),
+          _sectionTitle('ખેતરની માહિતી', Icons.agriculture),
           const SizedBox(height: 13),
-          _infoLine('Region', widget.regionName, Icons.location_on_outlined),
-          _infoLine('Farm', widget.farmName, Icons.grass),
+          _infoLine('વિસ્તાર', widget.regionName, Icons.location_on_outlined),
+          _infoLine('ખેતર', widget.farmName, Icons.grass),
           _infoLine(
-            'Current Crop',
+            'ચાલુ પાક',
             isLoadingCropCycle
-                ? 'Loading...'
-                : activeCropName ?? 'Not available',
+                ? 'પાક લોડ થઈ રહ્યો છે...'
+                : activeCropName ?? 'ચાલુ પાક મળ્યો નથી',
             Icons.spa_outlined,
           ),
         ],
@@ -667,14 +859,19 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 17),
-        _field(expenseNameController, 'Expense Name'),
+        // One unified row: text field on the left, dropdown menu button on the right
+        _editableDropdownField(
+          controller: expenseNameController,
+          label: 'ખર્ચનું નામ',
+          items: currentCropExpenseList,
+        ),
         const SizedBox(height: 14),
         Row(
           children: [
             Expanded(
               child: _field(
                 normalLabourNumberController,
-                'Labour Number',
+                'મજૂરોની સંખ્યા',
                 numeric: true,
                 onChanged: calculateNormalExpense,
               ),
@@ -683,7 +880,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
             Expanded(
               child: _field(
                 normalLabourAmountController,
-                'Each Labour Amount',
+                'પ્રતિ મજૂર રકમ',
                 numeric: true,
                 onChanged: calculateNormalExpense,
               ),
@@ -691,18 +888,24 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
           ],
         ),
         const SizedBox(height: 12),
-        _amountRow('Total Labour Amount', normalLabourTotal),
+        _amountRow('મજૂરીનો કુલ ખર્ચ', normalLabourTotal),
         const SizedBox(height: 14),
         _field(
           normalExtraAmountController,
-          'Extra Amount',
+          'વધારાનો ખર્ચ',
           numeric: true,
           onChanged: calculateNormalExpense,
+        ),
+        const SizedBox(height: 14),
+        _field(
+          normalNoteController,
+          'વધારાની નોંધ (વૈકલ્પિક)',
+          maxLines: 2,
         ),
         const SizedBox(height: 15),
         _dateCard(),
         const SizedBox(height: 12),
-        _amountRow('Total Expense', normalTotalExpense, grand: true),
+        _amountRow('કુલ ખર્ચ', normalTotalExpense, grand: true),
         const SizedBox(height: 18),
         _addButton(addNormalExpense),
       ],
@@ -713,37 +916,37 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _plainSectionTitle('Agro Expense'),
+        _plainSectionTitle('કૃષિ ખર્ચ'),
         const SizedBox(height: 17),
         _field(
           agroProductNameController,
-          'Agro Product Name',
+          'કૃષિ સામગ્રીનું નામ',
           important: true,
         ),
         const SizedBox(height: 14),
         _field(
           agroQuantityController,
-          'Quantity',
+          'જથ્થો',
           important: true,
           numeric: true,
         ),
         const SizedBox(height: 14),
         _field(
           agroTotalAmountController,
-          'Total Product Amount',
+          'સામગ્રીનો કુલ ખર્ચ',
           important: true,
           numeric: true,
           onChanged: calculateAgroExpense,
         ),
         const SizedBox(height: 12),
-        _amountRow('Total Product Amount', agroProductTotal),
+        _amountRow('સામગ્રીનો કુલ ખર્ચ', agroProductTotal),
         const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
               child: _field(
                 agroLabourNumberController,
-                'Labour Number',
+                'મજૂરોની સંખ્યા',
                 numeric: true,
                 onChanged: calculateAgroExpense,
               ),
@@ -752,7 +955,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
             Expanded(
               child: _field(
                 agroLabourAmountController,
-                'Each Labour Amount',
+                'પ્રતિ મજૂર રકમ',
                 numeric: true,
                 onChanged: calculateAgroExpense,
               ),
@@ -760,18 +963,24 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
           ],
         ),
         const SizedBox(height: 12),
-        _amountRow('Total Labour Amount', agroLabourTotal),
+        _amountRow('મજૂરીનો કુલ ખર્ચ', agroLabourTotal),
         const SizedBox(height: 14),
         _field(
           agroExtraAmountController,
-          'Extra Expense Amount',
+          'વધારાનો ખર્ચ',
           numeric: true,
           onChanged: calculateAgroExpense,
+        ),
+        const SizedBox(height: 14),
+        _field(
+          agroNoteController,
+          'વધારાની નોંધ (વૈકલ્પિક)',
+          maxLines: 2,
         ),
         const SizedBox(height: 15),
         _dateCard(),
         const SizedBox(height: 12),
-        _amountRow('Total Expense', agroTotalExpense, grand: true),
+        _amountRow('કુલ ખર્ચ', agroTotalExpense, grand: true),
         const SizedBox(height: 18),
         _addButton(addAgroExpense),
       ],
@@ -787,7 +996,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'Farm Expense',
+          'ખેતરનો ખર્ચ',
           style: TextStyle(
             color: Color(0xFF214B2D),
             fontWeight: FontWeight.bold,
@@ -812,7 +1021,7 @@ class _FarmExpensePageState extends State<FarmExpensePage> {
                 ],
               ),
               child: IconButton(
-                tooltip: 'View current crop expenses',
+                tooltip: 'ચાલુ પાકના ખર્ચ જુઓ',
                 onPressed: _openCropExpenseList,
                 icon: const Icon(
                   Icons.receipt_long_rounded,

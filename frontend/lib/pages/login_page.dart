@@ -150,7 +150,7 @@ class _LoginPageState extends State<LoginPage> {
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage(
-              'assets/images/Singup_background_image.png',
+              'assets/images/Singup_background_image.jpg',
             ),
             fit: BoxFit.cover,
           ),

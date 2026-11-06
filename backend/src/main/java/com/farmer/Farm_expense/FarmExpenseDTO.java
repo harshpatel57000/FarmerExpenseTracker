@@ -4,6 +4,7 @@ package com.farmer.Farm_expense;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,6 +43,8 @@ public class FarmExpenseDTO {
     private Double totalExpenseOfWorkers;
 
     private Double extraCost;
+
+    private String extraNote;
 
     @NotNull(message = "Please enter the Expense Date")
     private LocalDate expenseDate;

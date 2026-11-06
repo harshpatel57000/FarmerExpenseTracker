@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 
 
 public interface CropCycleRepository extends JpaRepository<CropCycle,Long>{
@@ -11,5 +12,7 @@ public interface CropCycleRepository extends JpaRepository<CropCycle,Long>{
     List<CropCycle> findByFarm_IdOrderByStartDateDesc(Long farmId);
 
     Optional<CropCycle> findByIdAndFarmUserId(Long id,Long userId);
+
+    List<CropCycle> findCropsByUserId(@Param("userId") Long userId);
 
 }

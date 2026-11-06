@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 import java.util.Map;
 
@@ -32,4 +34,10 @@ public class CropCycleController{
 
     return ResponseEntity.ok(cropcycleService.getCropsByFarm(farmId));
  }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<CropCycleDTO>> getUserCrops(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        List<CropCycleDTO> crops = cropcycleService.getUserCrops(( (CropCycleDTO) userPrincipal).getId());
+        return ResponseEntity.ok(crops);
+    }
 }

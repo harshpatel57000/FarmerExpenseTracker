@@ -37,6 +37,7 @@ class _CropCyclePageState extends State<CropCyclePage> {
     'તુવેર',
     'મગ',
     'ચણા',
+    'તમાકુ',
     'અન્ય પાક',
   ];
 

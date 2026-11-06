@@ -4,7 +4,7 @@ import 'package:frontend/pages/add_region/farm_page.dart';
 import 'package:frontend/pages/services/api_service.dart';
 
 // Change this path to use your own background image.
-const String backgroundImage = 'assets/images/Add_region_image.png';
+const String backgroundImage = 'assets/images/Add_region_image.jpg';
 
 const Color primaryGreen = Color(0xFF276555);
 const Color darkGreen = Color(0xFF164638);

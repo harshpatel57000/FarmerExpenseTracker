@@ -304,7 +304,7 @@ class _AgroExpenseAnalyticsPageState
   child: Transform.scale(
     scale: 1.3, // Zooms past the outer white margin
     child: Image.asset(
-      'assets/images/bag_agro_expense_icon_image.png',
+      'assets/images/bag_agro_expense_icon_image.jpg',
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => const Icon(
         Icons.grass,
@@ -388,7 +388,7 @@ class _AgroExpenseAnalyticsPageState
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/images/Agro_expense_page_image.png',
+            'assets/images/Agro_expense_page_image.jpg',
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) =>
                 Container(color: Colors.green.shade50),

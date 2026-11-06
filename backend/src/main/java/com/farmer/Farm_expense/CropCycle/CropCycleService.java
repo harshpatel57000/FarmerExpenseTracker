@@ -13,6 +13,7 @@ import com.farmer.exception.ErrorException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CropCycleService {
@@ -97,4 +98,11 @@ public class CropCycleService {
         return cropcycleRepository
                 .findByFarm_IdOrderByStartDateDesc(farm.getId());
     }
+
+    //GET:  Retrieve all crops for the logged-in user
+    public List<CropCycleDTO> getUserCrops(Long userId) {
+    return cropcycleRepository.findCropsByUserId(userId).stream()
+            .map(CropCycleMapper::toDTO)
+            .collect(Collectors.toList());
+}
 }

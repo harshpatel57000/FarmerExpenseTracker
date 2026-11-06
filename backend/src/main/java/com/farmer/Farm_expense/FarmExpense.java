@@ -60,10 +60,13 @@ public class FarmExpense {
     
     @Column(name="ExtraCost",nullable=true)
     private Double ExtraCost;
-    
+
+    @Column(name="Extra_note",nullable=true)
+    private String extraNote;
     
     @Column(name="date",nullable=false)
     private LocalDate expenseDate;
+
     @Column(name="total_cost",nullable=false)
     private Double totalCost;    
 

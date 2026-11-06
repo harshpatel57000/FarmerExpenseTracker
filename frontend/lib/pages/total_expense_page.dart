@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -16,46 +18,103 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
   final ApiService apiService = ApiService();
 
   String selectedYear = '2026';
-  String selectedCrop = 'ઘઉં';
   String? selectedFarmId;
+  String? selectedCropCycleId;
 
   final List<String> years = ['2026', '2025', '2024'];
-  final List<String> crops = ['ઘઉં', 'કપાસ', 'મગફળી', 'બાજરી'];
 
   List<Map<String, dynamic>> expenses = [];
   List<Map<String, dynamic>> farms = [];
+  List<Map<String, dynamic>> cropCycles = [];
 
   int currentPage = 0;
   final int pageSize = 20;
 
   bool isLoading = false;
+  bool isLoadingCropCycles = true;
   bool isExporting = false;
 
   String? errorMessage;
+  String? cropCycleErrorMessage;
+
+  List<Map<String, dynamic>> get availableCropCycles {
+    if (selectedFarmId == null) {
+      return cropCycles;
+    }
+
+    return cropCycles
+        .where((cycle) => cycle['_farmId']?.toString() == selectedFarmId)
+        .toList();
+  }
+
+  Map<String, dynamic>? get selectedCropCycle {
+    for (final cycle in availableCropCycles) {
+      if (cycle['id']?.toString() == selectedCropCycleId) {
+        return cycle;
+      }
+    }
+
+    return null;
+  }
+
+  String? get selectedCropName {
+    final value = selectedCropCycle?['cropName']?.toString().trim();
+
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    return value;
+  }
 
   @override
   void initState() {
     super.initState();
-    fetchFarms();
-    fetchExpenses();
+    fetchFarmsAndCropCycles();
   }
 
-  // Load the farm list from the existing API.
-  Future<void> fetchFarms() async {
+  // Load the authenticated user's farms and the cycles belonging to them.
+  Future<void> fetchFarmsAndCropCycles() async {
+    setState(() {
+      isLoadingCropCycles = true;
+      cropCycleErrorMessage = null;
+    });
+
     try {
       final result = await ApiService.getFarms();
+
+      final loadedFarms = result
+          .map<Map<String, dynamic>>(
+            (item) => Map<String, dynamic>.from(item as Map),
+          )
+          .toList();
+
+      final loadedCycles = await ApiService.getUserCropCycles(loadedFarms);
 
       if (!mounted) return;
 
       setState(() {
-        farms = result
-            .map<Map<String, dynamic>>(
-              (item) => Map<String, dynamic>.from(item as Map),
-            )
-            .toList();
+        farms = loadedFarms;
+        cropCycles = loadedCycles;
+        selectedCropCycleId = loadedCycles.isEmpty
+            ? null
+            : loadedCycles.first['id']?.toString();
+        isLoadingCropCycles = false;
       });
+
+      if (selectedCropName != null) {
+        await fetchExpenses();
+      }
     } catch (e) {
-      debugPrint('Error loading farms: $e');
+      if (!mounted) return;
+
+      setState(() {
+        farms = [];
+        cropCycles = [];
+        selectedCropCycleId = null;
+        isLoadingCropCycles = false;
+        cropCycleErrorMessage = 'પાકની યાદી લાવવામાં સમસ્યા આવી.\n$e';
+      });
     }
   }
 
@@ -102,7 +161,6 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
     return 'ખેતર';
   }
 
-  // IMPORTANT:
   // Use the existing working search endpoint.
   // Do not call GET /api/farm_expense here.
   Future<void> fetchExpenses() async {
@@ -112,8 +170,17 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
     });
 
     try {
+      final cropName = selectedCropName;
+
+      if (cropName == null) {
+        if (mounted) {
+          setState(() => expenses = []);
+        }
+        return;
+      }
+
       final firstResult = await apiService.searchFarmExpenses(
-        cropName: selectedCrop,
+        cropName: cropName,
         year: int.parse(selectedYear),
         page: 0,
         size: pageSize,
@@ -136,7 +203,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
       // Load the remaining pages from the server.
       for (var page = 1; page < serverTotalPages; page++) {
         final result = await apiService.searchFarmExpenses(
-          cropName: selectedCrop,
+          cropName: cropName,
           year: int.parse(selectedYear),
           page: page,
           size: pageSize,
@@ -240,12 +307,12 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
   }
 
   void changeCrop(String? value) {
-    if (value == null || value == selectedCrop) {
+    if (value == null || value == selectedCropCycleId) {
       return;
     }
 
     setState(() {
-      selectedCrop = value;
+      selectedCropCycleId = value;
       currentPage = 0;
     });
 
@@ -259,8 +326,21 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
 
     setState(() {
       selectedFarmId = value;
+
+      final selectedStillAvailable = availableCropCycles.any(
+        (cycle) => cycle['id']?.toString() == selectedCropCycleId,
+      );
+
+      if (!selectedStillAvailable) {
+        selectedCropCycleId = availableCropCycles.isEmpty
+            ? null
+            : availableCropCycles.first['id']?.toString();
+      }
+
       currentPage = 0;
     });
+
+    fetchExpenses();
   }
 
   void changePage(int page) {
@@ -279,6 +359,13 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
       appBar: AppBar(
         title: const Text('કુલ ખર્ચ'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'હોમ',
+            icon: const Icon(Icons.home_outlined),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -317,8 +404,6 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
             ),
           ),
           const SizedBox(height: 14),
-
-          // Year and crop selection.
           Row(
             children: [
               Expanded(
@@ -341,27 +426,58 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: selectedCrop,
+                  initialValue: availableCropCycles.any(
+                    (cycle) => cycle['id']?.toString() == selectedCropCycleId,
+                  )
+                      ? selectedCropCycleId
+                      : null,
                   isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'પાક',
+                    labelText: 'પાક (ચાલુ અને પૂર્ણ)',
                     border: OutlineInputBorder(),
                   ),
-                  items: crops.map((crop) {
+                  hint: Text(
+                    isLoadingCropCycles
+                        ? 'પાક લોડ થઈ રહ્યા છે...'
+                        : 'પાક પસંદ કરો',
+                  ),
+                  items: availableCropCycles.map((cycle) {
+                    final id = cycle['id']?.toString();
+                    final cropName = cycle['cropName']?.toString() ?? '';
+                    final status = cycle['status']?.toString() ?? '';
+                    final farmName = cycle['_farmName']?.toString() ?? '';
+                    final startDate = cycle['startDate']?.toString() ?? '';
+                    final normalizedStatus = status.trim().toUpperCase();
+
+                    final statusLabel = normalizedStatus == 'COMPLETED'
+                        ? 'પૂર્ણ'
+                        : normalizedStatus == 'ACTIVE'
+                            ? 'ચાલુ'
+                            : status;
+
+                    final label = [
+                      cropName,
+                      statusLabel,
+                      startDate,
+                      farmName,
+                    ].where((part) => part.trim().isNotEmpty).join(' • ');
+
                     return DropdownMenuItem<String>(
-                      value: crop,
-                      child: Text(crop),
+                      value: id,
+                      child: Text(
+                        label,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
-                  }).toList(),
-                  onChanged: changeCrop,
+                  }).where((item) => item.value != null).toList(),
+                  onChanged: isLoadingCropCycles || availableCropCycles.isEmpty
+                      ? null
+                      : changeCrop,
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 14),
-
-          // Farm selection.
           DropdownButtonFormField<String>(
             initialValue: selectedFarmId,
             isExpanded: true,
@@ -423,9 +539,47 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
       );
     }
 
+    if (cropCycleErrorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                cropCycleErrorMessage!,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: fetchFarmsAndCropCycles,
+                icon: const Icon(Icons.refresh),
+                label: const Text('ફરી પ્રયત્ન કરો'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (farms.isEmpty) {
       return const Center(
-        child: Text('ખેતરની યાદી મળી નથી.'),
+        child: Text('તમારા ખાતામાં ખેતરની યાદી મળી નથી.'),
+      );
+    }
+
+    if (isLoadingCropCycles) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (availableCropCycles.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('આ ખેતર માટે ચાલુ કે પૂર્ણ પાક ચક્ર મળ્યું નથી.'),
+        ),
       );
     }
 
@@ -482,7 +636,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'વર્ષ: $selectedYear  •  પાક: $selectedCrop',
+            'વર્ષ: $selectedYear  •  પાક: ${selectedCropName ?? '-'}',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -499,9 +653,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'આ પાનાંનો કુલ ખર્ચ: ${money(currentPageTotal)}',
-          ),
+          Text('આ પાનાંનો કુલ ખર્ચ: ${money(currentPageTotal)}'),
         ],
       ),
     );
@@ -534,18 +686,10 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
           rows: currentPageFarmExpenses.map((expense) {
             return DataRow(
               cells: [
-                DataCell(
-                  Text(displayDate(expense['expenseDate'])),
-                ),
-                DataCell(
-                  Text(displayText(expense['farmId'])),
-                ),
-                DataCell(
-                  Text(displayText(expense['expenseName'])),
-                ),
-                DataCell(
-                  Text(displayText(expense['expenseType'])),
-                ),
+                DataCell(Text(displayDate(expense['expenseDate']))),
+                DataCell(Text(displayText(expense['farmId']))),
+                DataCell(Text(displayText(expense['expenseName']))),
+                DataCell(Text(displayText(expense['expenseType']))),
                 DataCell(
                   Text(
                     money(expense['totalCost']),
@@ -602,8 +746,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
         width: double.infinity,
         height: 48,
         child: ElevatedButton.icon(
-          onPressed:
-              isExporting ? null : generatePdf,
+          onPressed: isExporting ? null : generatePdf,
           icon: const Icon(Icons.picture_as_pdf_outlined),
           label: Text(
             isExporting
@@ -638,7 +781,7 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
             const SizedBox(height: 6),
             Text(
               '$selectedFarmName માટે '
-              '$selectedYear • $selectedCrop માં કોઈ રેકોર્ડ નથી.',
+              '$selectedYear • ${selectedCropName ?? '-'} માં કોઈ રેકોર્ડ નથી.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -666,7 +809,8 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
     try {
       final pdf = pw.Document();
 
-      // Export every selected-farm record, not only the visible page.
+      // Flutter shapes Gujarati correctly. Convert only Gujarati-containing
+      // cells to images; ordinary English and numeric cells remain PDF text.
       final rows = selectedFarmExpenses.map((expense) {
         return [
           displayDate(expense['expenseDate']),
@@ -676,6 +820,99 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
           money(expense['totalCost']),
         ];
       }).toList();
+
+      const columnWidths = <double>[78, 58, 300, 90, 105];
+      final tableRows = <pw.TableRow>[];
+
+      final headerValues = [
+        'Date',
+        'Farm ID',
+        'Expense Name',
+        'Type',
+        'Amount',
+      ];
+
+      final headerWidgets = await Future.wait(
+        List.generate(headerValues.length, (index) {
+          return _pdfCell(
+            headerValues[index],
+            maxWidth: columnWidths[index] - 8,
+            fontSize: 9,
+            bold: true,
+            align: TextAlign.center,
+          );
+        }),
+      );
+
+      tableRows.add(
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+          children: headerWidgets
+              .map(
+                (cell) => pw.Padding(
+                  padding: const pw.EdgeInsets.all(4),
+                  child: cell,
+                ),
+              )
+              .toList(),
+        ),
+      );
+
+      for (final row in rows) {
+        final cells = await Future.wait(
+          List.generate(row.length, (index) {
+            return _pdfCell(
+              row[index],
+              maxWidth: columnWidths[index] - 8,
+              fontSize: 9,
+              bold: index == 4,
+              align: index == 4 ? TextAlign.right : TextAlign.left,
+            );
+          }),
+        );
+
+        tableRows.add(
+          pw.TableRow(
+            children: cells
+                .map(
+                  (cell) => pw.Padding(
+                    padding: const pw.EdgeInsets.all(4),
+                    child: cell,
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      }
+
+      final farmLabel = await _pdfCell(
+        'ખેતર: $selectedFarmName',
+        maxWidth: 760,
+        fontSize: 10,
+        bold: true,
+      );
+      final yearLabel = await _pdfCell(
+        'વર્ષ: $selectedYear',
+        maxWidth: 760,
+        fontSize: 10,
+      );
+      final cropLabel = await _pdfCell(
+        'પાક: ${selectedCropName ?? '-'}',
+        maxWidth: 760,
+        fontSize: 10,
+      );
+      final recordCountLabel = await _pdfCell(
+        'કુલ રેકોર્ડ: ${selectedFarmExpenses.length}',
+        maxWidth: 760,
+        fontSize: 10,
+      );
+      final totalLabel = await _pdfCell(
+        'કુલ ખર્ચ: ${money(allSelectedFarmTotal)}',
+        maxWidth: 760,
+        fontSize: 12,
+        bold: true,
+        align: TextAlign.right,
+      );
 
       pdf.addPage(
         pw.MultiPage(
@@ -691,41 +928,26 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
                 ),
               ),
               pw.SizedBox(height: 8),
-              pw.Text('Farm: $selectedFarmName'),
-              pw.Text('Year: $selectedYear'),
-              pw.Text('Crop: $selectedCrop'),
-              pw.Text('Total records: ${selectedFarmExpenses.length}'),
+              farmLabel,
+              yearLabel,
+              cropLabel,
+              recordCountLabel,
               pw.SizedBox(height: 12),
-              pw.TableHelper.fromTextArray(
-                headers: [
-                  'Date',
-                  'Farm ID',
-                  'Expense Name',
-                  'Type',
-                  'Amount',
-                ],
-                data: rows,
-                headerStyle: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                ),
-                cellStyle: const pw.TextStyle(
-                  fontSize: 9,
-                ),
+              pw.Table(
+                columnWidths: {
+                  for (var index = 0; index < columnWidths.length; index++)
+                    index: pw.FixedColumnWidth(columnWidths[index]),
+                },
                 border: pw.TableBorder.all(
                   color: PdfColors.grey,
                   width: 0.5,
                 ),
+                children: tableRows,
               ),
               pw.SizedBox(height: 12),
               pw.Align(
                 alignment: pw.Alignment.centerRight,
-                child: pw.Text(
-                  'Total expense: ${money(allSelectedFarmTotal)}',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
+                child: totalLabel,
               ),
             ];
           },
@@ -750,5 +972,78 @@ class _TotalExpensePageState extends State<TotalExpensePage> {
         });
       }
     }
+  }
+
+  /// Render Gujarati-containing strings with Flutter's text shaper so Gujarati
+  /// conjuncts and vowel marks remain correct in the generated PDF.
+  /// English-only and number-only strings stay selectable PDF text.
+  Future<pw.Widget> _pdfCell(
+    String text, {
+    required double maxWidth,
+    required double fontSize,
+    bool bold = false,
+    TextAlign align = TextAlign.left,
+  }) async {
+    final needsFlutterShaping =
+        RegExp(r'[\u0A80-\u0AFF₹]').hasMatch(text);
+
+    if (!needsFlutterShaping) {
+      final pdfAlign = align == TextAlign.center
+          ? pw.TextAlign.center
+          : align == TextAlign.right
+              ? pw.TextAlign.right
+              : pw.TextAlign.left;
+
+      return pw.Text(
+        text,
+        textAlign: pdfAlign,
+        style: pw.TextStyle(
+          fontSize: fontSize,
+          fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+      );
+    }
+
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: 'NotoSansGujarati',
+          fontSize: fontSize,
+          fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: align,
+    )..layout(maxWidth: maxWidth);
+
+    const pixelScale = 3.0;
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(pictureRecorder);
+    canvas.scale(pixelScale);
+    painter.paint(canvas, ui.Offset.zero);
+
+    final picture = pictureRecorder.endRecording();
+    final image = await picture.toImage(
+      (painter.width * pixelScale).ceil(),
+      (painter.height * pixelScale).ceil(),
+    );
+    final imageData = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+
+    if (imageData == null) {
+      return pw.Text(
+        text,
+        style: pw.TextStyle(fontSize: fontSize),
+      );
+    }
+
+    return pw.Image(
+      pw.MemoryImage(imageData.buffer.asUint8List()),
+      width: painter.width,
+      height: painter.height,
+      fit: pw.BoxFit.contain,
+    );
   }
 }

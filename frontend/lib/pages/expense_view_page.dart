@@ -542,7 +542,7 @@ class _ExpenseViewPageState extends State<ExpenseViewPage> {
               : Container(
                   decoration: const BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/images/farm_day.png'),
+                      image: AssetImage('assets/images/farm_day.jpg'),
                       fit: BoxFit.cover,
                       alignment: Alignment.center,
                     ),
